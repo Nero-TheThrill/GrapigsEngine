@@ -63,4 +63,4 @@ x86/
 .ini
 
 # third_party folder
-third_party/
+#third_party/
