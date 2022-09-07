@@ -4,24 +4,27 @@
     <Filter Include="Windows">
       <UniqueIdentifier>{e3cbce1c-578d-4ab2-af4f-2a21ef862a31}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Windows\ObjectManager">
+    <Filter Include="Windows\Application">
+      <UniqueIdentifier>{759fc8c5-44bf-47e6-aad8-64b9c6039a75}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Windows\ResourceManager">
       <UniqueIdentifier>{421bf37f-d5cd-4433-8402-ed0a8025f908}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Application.h">
-      <Filter>Windows</Filter>
+    <ClInclude Include="ResourceManager.h">
+      <Filter>Windows\ResourceManager</Filter>
     </ClInclude>
-    <ClInclude Include="ObjectManager.h">
-      <Filter>Windows\ObjectManager</Filter>
+    <ClInclude Include="Application.h">
+      <Filter>Windows\Application</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Application.cpp">
-      <Filter>Windows</Filter>
+    <ClCompile Include="ResourceManager.cpp">
+      <Filter>Windows\ResourceManager</Filter>
     </ClCompile>
-    <ClCompile Include="ObjectManager.cpp">
-      <Filter>Windows\ObjectManager</Filter>
+    <ClCompile Include="Application.cpp">
+      <Filter>Windows\Application</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

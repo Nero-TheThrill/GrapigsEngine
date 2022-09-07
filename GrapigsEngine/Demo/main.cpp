@@ -7,15 +7,26 @@
 
 #include "Application.h"
 #include <imgui.h>
+#include "ResourceManager.h"
 
 int main(void)
 {
 	Application application;
+	ResourceManager resource_manager;
+
 	application.Init();
+	
 	Application::SetBackgroundColor(180, 210, 200);
+	resource_manager.CompileShader(0, "../shader/test.vert", "../shader/test.frag");
+	
+
+	resource_manager.CreateObject(0, "cube", 0, 0);
+
+
 	while(application.ShouldQuit() == false)
 	{
 		application.BeginUpdate();
+
 		///////////////////////////////////////////////////////////
 		/*
 		 *	draw/rendering functions

@@ -77,11 +77,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Application.h" />
-    <ClInclude Include="ObjectManager.h" />
+    <ClInclude Include="ResourceManager.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Application.cpp" />
-    <ClCompile Include="ObjectManager.cpp" />
+    <ClCompile Include="ResourceManager.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
