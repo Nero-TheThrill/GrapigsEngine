@@ -51,7 +51,7 @@ struct Mesh
 };
 struct Object
 {
-    //Transform transform;
+    Transform transform;
     GLuint shader = 0;
     Mesh* mesh = 0;
     unsigned tag = 0;

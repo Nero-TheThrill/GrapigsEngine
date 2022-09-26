@@ -10,6 +10,9 @@
     <Filter Include="Windows\ResourceManager">
       <UniqueIdentifier>{421bf37f-d5cd-4433-8402-ed0a8025f908}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Windows\Component">
+      <UniqueIdentifier>{391979f8-8f95-4f0d-b95f-740ae3816141}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ResourceManager.h">
@@ -18,6 +21,7 @@
     <ClInclude Include="Application.h">
       <Filter>Windows\Application</Filter>
     </ClInclude>
+    <ClInclude Include="Transform.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ResourceManager.cpp">
@@ -26,5 +30,6 @@
     <ClCompile Include="Application.cpp">
       <Filter>Windows\Application</Filter>
     </ClCompile>
+    <ClCompile Include="Transform.cpp" />
   </ItemGroup>
 </Project>
