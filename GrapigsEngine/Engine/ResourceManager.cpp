@@ -17,6 +17,45 @@ ResourceManager::ResourceManager()
 ResourceManager::~ResourceManager()
 {
 }
+void ResourceManager::LoadMesh(const std::string& path)
+{
+    Mesh* mesh = new Mesh();
+    glGenVertexArrays(1, &mesh->VAO);
+    glBindVertexArray(mesh->VAO);
+    glGenBuffers(NUM_VBO, mesh->VBO);
+
+
+    //TODO
+
+
+    glBindVertexArray(0);
+}
+
+Mesh* ResourceManager::GetMeshByName(const std::string& target_name)
+{
+    for(auto mesh : mesh_storage)
+    {
+        if(mesh->name== target_name)
+        {
+            return mesh;
+        }
+    }
+    std::cout << "Mesh Not Found. Name : " << target_name << std::endl;
+    return nullptr;
+}
+
+Mesh* ResourceManager::GetMeshByTag(const unsigned& target_tag)
+{
+    for (auto mesh : mesh_storage)
+    {
+        if (mesh->tag == target_tag)
+        {
+            return mesh;
+        }
+    }
+    std::cout << "Mesh Not Found. Tag : " << target_tag << std::endl;
+    return nullptr;
+}
 
 Object* ResourceManager::GetObjectByName(std::string target_name)
 {
@@ -29,11 +68,11 @@ Object* ResourceManager::GetObjectByName(std::string target_name)
             return obj;
         }
     }
-
+    std::cout << "Object Not Found. Name : " << target_name << std::endl;
     return nullptr;
 }
 
-std::vector<Object*> ResourceManager::GetObjectByTag(unsigned target_tag)
+std::vector<Object*> ResourceManager::GetObjectByTag(const unsigned& target_tag)
 {
     std::vector<Object*> result;
 
@@ -44,7 +83,10 @@ std::vector<Object*> ResourceManager::GetObjectByTag(unsigned target_tag)
             result.push_back(obj);
         }
     }
-
+    if(result.size()==0)
+    {
+        std::cout << "Object Not Found. Tag : " << target_tag << std::endl;
+    }
     return result;
 }
 
@@ -52,7 +94,7 @@ Object* ResourceManager::CreateObject(unsigned obj_tag, std::string obj_name, un
 {
     Object* new_obj = new Object();
 
-    new_obj->mesh = mesh_tag;
+    new_obj->mesh = GetMeshByTag(mesh_tag);
     new_obj->shader = shader_tag;
     new_obj->tag = obj_tag;
     new_obj->name = obj_name;
@@ -87,7 +129,7 @@ void ResourceManager::CompileShader(unsigned tag, const std::string& vert_path, 
     glAttachShader(program_handle, LoadVertexShader(vert_path));
     glAttachShader(program_handle, LoadFragmentShader(frag_path));
 
-    shader_storage.push_back(std::pair<unsigned, GLuint>(tag, program_handle));
+
 
     glLinkProgram(program_handle);
 
@@ -109,6 +151,20 @@ void ResourceManager::CompileShader(unsigned tag, const std::string& vert_path, 
         }
         return;
     }
+    shader_storage.emplace_back(std::pair<unsigned, GLuint>(tag, program_handle));
+}
+
+GLuint ResourceManager::GetShaderByTag(const unsigned& target_tag)
+{
+    for (auto shader : shader_storage)
+    {
+        if (shader.first == target_tag)
+        {
+            return shader.second;
+        }
+    }
+    std::cout << "Shader Not Found. Tag : " << target_tag << std::endl;
+    return -1;
 }
 
 GLuint ResourceManager::LoadVertexShader(const std::string& path)
