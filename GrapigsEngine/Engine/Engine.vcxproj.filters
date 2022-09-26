@@ -21,7 +21,9 @@
     <ClInclude Include="Application.h">
       <Filter>Windows\Application</Filter>
     </ClInclude>
-    <ClInclude Include="Transform.h" />
+    <ClInclude Include="Transform.h">
+      <Filter>Windows\Component</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ResourceManager.cpp">
@@ -30,6 +32,8 @@
     <ClCompile Include="Application.cpp">
       <Filter>Windows\Application</Filter>
     </ClCompile>
-    <ClCompile Include="Transform.cpp" />
+    <ClCompile Include="Transform.cpp">
+      <Filter>Windows\Component</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

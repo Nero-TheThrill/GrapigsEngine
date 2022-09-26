@@ -9,6 +9,8 @@
 #include <string>
 #include <gl/glew.h>	
 #include <GLFW/glfw3.h>
+
+#include "Transform.h"
 #include "glm/glm.hpp"
 
 #define NUM_VBO 3
