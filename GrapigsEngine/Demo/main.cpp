@@ -7,6 +7,8 @@
 
 #include "Application.h"
 #include <imgui.h>
+
+#include "PlaceHolder_Cube.h"
 #include "ResourceManager.h"
 
 int main(void)
@@ -17,16 +19,16 @@ int main(void)
 	application.Init();
 	
 	Application::SetBackgroundColor(180, 210, 200);
-	resource_manager.CompileShader(0, "../shader/test.vert", "../shader/test.frag");
-	
-
-	resource_manager.CreateObject(0, "cube", 0, 0);
-
+	resource_manager.CompileShader(1, "../shader/test.vert", "../shader/test.frag");
+	Mesh* mesh = GetCubeMesh();
+	resource_manager.mesh_storage.push_back(mesh);
+	Object* obj = resource_manager.CreateObject(0, "cube", 1, 1);
 
 	while(application.ShouldQuit() == false)
 	{
 		application.BeginUpdate();
 
+		obj->Draw();
 		///////////////////////////////////////////////////////////
 		/*
 		 *	draw/rendering functions
@@ -35,6 +37,7 @@ int main(void)
 		///////////////////////////////////////////////////////////
 		application.EndUpdate();
 	}
+	delete mesh;
 	application.CleanUp();
 	return 0;
 }

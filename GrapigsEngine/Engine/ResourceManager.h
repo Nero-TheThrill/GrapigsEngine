@@ -32,21 +32,21 @@ struct Mesh
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
-        glBindBuffer(GL_ARRAY_BUFFER, VBO[1]);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(normals[0]) * normals.size(), normals.data(), GL_STATIC_DRAW);
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+        //glBindBuffer(GL_ARRAY_BUFFER, VBO[1]);
+        //glBufferData(GL_ARRAY_BUFFER, sizeof(normals[0]) * normals.size(), normals.data(), GL_STATIC_DRAW);
+        //glEnableVertexAttribArray(1);
+        //glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
-        glBindBuffer(GL_ARRAY_BUFFER, VBO[2]);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(texcoords[0]) * texcoords.size(), texcoords.data(), GL_STATIC_DRAW);
-        glEnableVertexAttribArray(2);
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
+        //glBindBuffer(GL_ARRAY_BUFFER, VBO[2]);
+        //glBufferData(GL_ARRAY_BUFFER, sizeof(texcoords[0]) * texcoords.size(), texcoords.data(), GL_STATIC_DRAW);
+        //glEnableVertexAttribArray(2);
+        //glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
     }
     void Draw() const
     {
         glBindVertexArray(VAO);
         PopulateBuffers();
-        glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, indices.data());
+        glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, indices.data());
         glBindVertexArray(0);
     }
 
@@ -88,10 +88,10 @@ public:
     void CompileShader(unsigned tag, const std::string& vert_path, const std::string& frag_path);
     GLuint GetShaderByTag(const unsigned& target_tag);
     
+    std::vector<Mesh*> mesh_storage;
 private:
     std::vector<Object*> obj_storage;
     std::vector<std::pair<unsigned, GLuint>> shader_storage;
-    std::vector<Mesh*> mesh_storage;
     
     GLuint LoadVertexShader(const std::string& path);
     GLuint LoadFragmentShader(const std::string& path);

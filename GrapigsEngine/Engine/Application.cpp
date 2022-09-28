@@ -17,6 +17,9 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 
+#include "Camera.h"	// CameraBuffer
+#include "Input.h"	// Input
+
 namespace Callback
 {
 	void Error(int error, const char* description) noexcept;
@@ -77,21 +80,19 @@ void Application::Init(int width, int height, const char* title)
 	m_p_window = window;
 
 	// Set callback
-	constexpr auto winsizechanged_cb = [](GLFWwindow* p_win, int w, int h)
-	{
-		Callback::WindowSizeChanged(p_win, w, h);
-	};
-	glfwSetFramebufferSizeCallback(window, winsizechanged_cb);
-	constexpr auto keyboard_cb = [](GLFWwindow* p_win, int k, int s, int a, int m)
-	{
-		Callback::Keyboard(p_win, k, s, a, m);
-	};
-	glfwSetKeyCallback(window, keyboard_cb);
-	constexpr auto drag_drop_cb = [](GLFWwindow* p_win, int c, const char** p)
-	{
-		Callback::DragAndDrop(p_win, c, p);
-	};
-	glfwSetDropCallback(window, drag_drop_cb);
+
+	glfwSetFramebufferSizeCallback(window, [](GLFWwindow*, int w, int h)
+		{
+			glViewport(0, 0, w, h);
+			const_cast<glm::ivec2&>(Input::s_m_windowSize) = glm::ivec2(w, h);
+			CameraBuffer::s_m_aspectRatio = static_cast<float>(w) / static_cast<float>(h);
+		});
+	glfwSetKeyCallback(window, [](GLFWwindow* p_win, int k, int s, int a, int m) {Callback::Keyboard(p_win, k, s, a, m); });
+	glfwSetDropCallback(window, [](GLFWwindow* p_win, int c, const char** p){	Callback::DragAndDrop(p_win, c, p);	});
+	glfwSetCursorPosCallback(window, [](GLFWwindow* p_win, double x, double y) {Input::CursorPosCallback(p_win, x, y); });
+	glfwSetMouseButtonCallback(window, [](GLFWwindow* p_win, int b, int a, int m) {Input::MouseButtonCallback(p_win, b, a, m); });
+	glfwSetScrollCallback(window, [](GLFWwindow* p_win, double x, double y) {Input::ScrollCallback(p_win, x, y); });
+
 
 	// ImGui Init
 	IMGUI_CHECKVERSION();
@@ -99,6 +100,8 @@ void Application::Init(int width, int height, const char* title)
 	ImGui::StyleColorsDark();
 	ImGui_ImplGlfw_InitForOpenGL(glfwGetCurrentContext(), true);
 	ImGui_ImplOpenGL3_Init("#version 460");
+
+	CameraBuffer::SetMainCamera(new Camera());
 }
 
 
@@ -117,6 +120,9 @@ void Application::BeginUpdate() const noexcept
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
+
+	CameraBuffer::UpdateMainCamera();
+	CameraBuffer::Bind();
 }
 
 void Application::EndUpdate() const noexcept
@@ -131,6 +137,9 @@ void Application::EndUpdate() const noexcept
 
 void Application::CleanUp() const noexcept
 {
+	// Destroy
+	CameraBuffer::Clear();
+
 	// ImGui
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplGlfw_Shutdown();

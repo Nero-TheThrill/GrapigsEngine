@@ -79,11 +79,15 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Application.h" />
+    <ClInclude Include="Camera.h" />
+    <ClInclude Include="Input.h" />
     <ClInclude Include="ResourceManager.h" />
     <ClInclude Include="Transform.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Application.cpp" />
+    <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="Input.cpp" />
     <ClCompile Include="ResourceManager.cpp" />
     <ClCompile Include="Transform.cpp" />
   </ItemGroup>

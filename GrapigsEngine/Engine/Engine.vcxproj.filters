@@ -24,6 +24,12 @@
     <ClInclude Include="Transform.h">
       <Filter>Windows\Component</Filter>
     </ClInclude>
+    <ClInclude Include="Input.h">
+      <Filter>Windows\Application</Filter>
+    </ClInclude>
+    <ClInclude Include="Camera.h">
+      <Filter>Windows\Application</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ResourceManager.cpp">
@@ -34,6 +40,12 @@
     </ClCompile>
     <ClCompile Include="Transform.cpp">
       <Filter>Windows\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Input.cpp">
+      <Filter>Windows\Application</Filter>
+    </ClCompile>
+    <ClCompile Include="Camera.cpp">
+      <Filter>Windows\Application</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

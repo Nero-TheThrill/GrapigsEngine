@@ -17,7 +17,7 @@ ResourceManager::ResourceManager()
 ResourceManager::~ResourceManager()
 {
 }
-void ResourceManager::LoadMesh(const std::string& path)
+void ResourceManager::LoadMesh(const std::string& /*path*/)
 {
     Mesh* mesh = new Mesh();
     glGenVertexArrays(1, &mesh->VAO);
@@ -129,28 +129,36 @@ void ResourceManager::CompileShader(unsigned tag, const std::string& vert_path, 
     glAttachShader(program_handle, LoadVertexShader(vert_path));
     glAttachShader(program_handle, LoadFragmentShader(frag_path));
 
-
-
+    // verify link status
     glLinkProgram(program_handle);
-
-    
-    glValidateProgram(program_handle);
-    GLint status;
-    glGetProgramiv(program_handle, GL_VALIDATE_STATUS, &status);
-    if (GL_FALSE == status) {
-        log_string = "Failed to validate shader program for current OpenGL context\n";
-        GLint log_len;
-        glGetProgramiv(program_handle, GL_INFO_LOG_LENGTH, &log_len);
-        if (log_len > 0) {
-            GLchar* log_str = new GLchar[log_len];
-            GLsizei written_log_len;
-            glGetProgramInfoLog(program_handle, log_len, &written_log_len, log_str);
-            log_string += log_str;
-            std::cout << log_string << std::endl;
-            delete[] log_str;
-        }
+    GLint linked = 0;
+    glGetProgramiv(program_handle, GL_LINK_STATUS, &linked);
+    if (linked == GL_FALSE)
+    {
+        GLint log_length = 0;
+        glGetProgramiv(program_handle, GL_INFO_LOG_LENGTH, &log_length);
+        std::vector<char> error_log(log_length);
+        glGetProgramInfoLog(program_handle, log_length, nullptr, error_log.data());
+        glDeleteProgram(program_handle);
+        std::cout << ("[ShaderProgram]: Link Failure\n" + std::string(error_log.begin(), error_log.end()));
         return;
     }
+
+    // Check validate
+    glValidateProgram(program_handle);
+    GLint is_validate = 0;
+    glGetProgramiv(program_handle, GL_VALIDATE_STATUS, &is_validate);
+    if (is_validate == GL_FALSE)
+    {
+        GLint log_length = 0;
+        glGetProgramiv(program_handle, GL_INFO_LOG_LENGTH, &log_length);
+        std::vector<char> error_log(log_length);
+        glGetProgramInfoLog(program_handle, log_length, nullptr, error_log.data());
+        glDeleteProgram(program_handle);
+        std::cout << ("[ShaderProgram]: Validate Failure\n" + std::string(error_log.begin(), error_log.end()));
+        return;
+    }
+
     shader_storage.emplace_back(std::pair<unsigned, GLuint>(tag, program_handle));
 }
 
@@ -164,7 +172,7 @@ GLuint ResourceManager::GetShaderByTag(const unsigned& target_tag)
         }
     }
     std::cout << "Shader Not Found. Tag : " << target_tag << std::endl;
-    return -1;
+    return 0;
 }
 
 GLuint ResourceManager::LoadVertexShader(const std::string& path)
