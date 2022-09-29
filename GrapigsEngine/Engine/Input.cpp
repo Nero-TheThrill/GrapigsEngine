@@ -7,6 +7,7 @@
 
 #include "Input.h"
 
+#include <iostream>
 #include <ostream>	// std::ostream
 #include <GLFW/glfw3.h>	// glfw functions
 
@@ -46,6 +47,7 @@ void Input::MouseButtonCallback(void*, int button, int action, int mod) noexcept
 		else if (button == GLFW_MOUSE_BUTTON_RIGHT)
 			s_m_isMouseDown[1] = false;
 		s_m_mouseMod = ModKey::None;
+		s_m_cursorDir = glm::vec2(0);
 	}
 	else
 	{

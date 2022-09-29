@@ -9,6 +9,8 @@
 #include <sstream>
 #include <iostream>
 
+#include "FBXImporter.h"    // FBX Importer
+
 
 ResourceManager::ResourceManager()
 {
@@ -17,18 +19,20 @@ ResourceManager::ResourceManager()
 ResourceManager::~ResourceManager()
 {
 }
-void ResourceManager::LoadMesh(const std::string& /*path*/)
+void ResourceManager::LoadMesh(const std::string& path)
 {
-    Mesh* mesh = new Mesh();
-    glGenVertexArrays(1, &mesh->VAO);
-    glBindVertexArray(mesh->VAO);
-    glGenBuffers(NUM_VBO, mesh->VBO);
+    auto dummies = FBXImporter::Load(path.c_str());
+
+    //Mesh* mesh = new Mesh();
+    //glGenVertexArrays(1, &mesh->VAO);
+    //glBindVertexArray(mesh->VAO);
+    //glGenBuffers(NUM_VBO, mesh->VBO);
 
 
-    //TODO
+    //glBindVertexArray(0);
 
-
-    glBindVertexArray(0);
+    for(auto& d : dummies)
+        delete d;
 }
 
 Mesh* ResourceManager::GetMeshByName(const std::string& target_name)

@@ -30,6 +30,9 @@
     <ClInclude Include="Camera.h">
       <Filter>Windows\Application</Filter>
     </ClInclude>
+    <ClInclude Include="FBXImporter.h">
+      <Filter>Windows\ResourceManager</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ResourceManager.cpp">
@@ -46,6 +49,9 @@
     </ClCompile>
     <ClCompile Include="Camera.cpp">
       <Filter>Windows\Application</Filter>
+    </ClCompile>
+    <ClCompile Include="FBXImporter.cpp">
+      <Filter>Windows\ResourceManager</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
