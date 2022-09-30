@@ -35,19 +35,19 @@ unsigned cube_elements[] = {
 	6, 7, 3
 };
 
-inline Mesh* GetCubeMesh()
-{
-	Mesh* mesh = new Mesh();
-
-	glGenVertexArrays(1, &mesh->VAO);
-	glBindVertexArray(mesh->VAO);
-	glGenBuffers(NUM_VBO, mesh->VBO);
-
-	mesh->name = "Cube";
-	for(int i = 0; i < 24; i+=3)
-		mesh->positions.push_back({ cube_vertices[i], cube_vertices[i + 1], cube_vertices[i + 2] });
-	for(int i = 0; i < 36; ++i)
-		mesh->indices.push_back(cube_elements[i]);
-	mesh->tag = 1;
-	return mesh;
-}
+//inline Mesh* GetCubeMesh()
+//{
+//	Mesh* mesh = new Mesh();
+//
+//	glGenVertexArrays(1, &mesh->VAO);
+//	glBindVertexArray(mesh->VAO);
+//	glGenBuffers(NUM_VBO, mesh->VBO);
+//
+//	mesh->name = "Cube";
+//	for(int i = 0; i < 24; i+=3)
+//		mesh->positions.push_back({ cube_vertices[i], cube_vertices[i + 1], cube_vertices[i + 2] });
+//	for(int i = 0; i < 36; ++i)
+//		mesh->indices.push_back(cube_elements[i]);
+//	mesh->tag = 1;
+//	return mesh;
+//}

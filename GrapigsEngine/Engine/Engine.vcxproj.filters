@@ -13,6 +13,9 @@
     <Filter Include="Windows\Component">
       <UniqueIdentifier>{391979f8-8f95-4f0d-b95f-740ae3816141}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Windows\ResourceManager\Shader">
+      <UniqueIdentifier>{f9232e91-fc28-44dd-96b7-09fcf4e3cdee}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ResourceManager.h">
@@ -32,6 +35,9 @@
     </ClInclude>
     <ClInclude Include="FBXImporter.h">
       <Filter>Windows\ResourceManager</Filter>
+    </ClInclude>
+    <ClInclude Include="ShaderSet.h">
+      <Filter>Windows\ResourceManager\Shader</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -9,7 +9,6 @@
 #include <sstream>
 #include <iostream>
 
-#include "FBXImporter.h"    // FBX Importer
 
 
 ResourceManager::ResourceManager()
@@ -21,23 +20,16 @@ ResourceManager::~ResourceManager()
 }
 void ResourceManager::LoadMesh(const std::string& path)
 {
-    auto dummies = FBXImporter::Load(path.c_str());
-
-    //Mesh* mesh = new Mesh();
-    //glGenVertexArrays(1, &mesh->VAO);
-    //glBindVertexArray(mesh->VAO);
-    //glGenBuffers(NUM_VBO, mesh->VBO);
-
-
-    //glBindVertexArray(0);
-
-    for(auto& d : dummies)
-        delete d;
+    auto gmeshes = importer.Load(path.c_str());
+    for(auto gmesh:gmeshes)
+    {
+        gmesh_storage.push_back(gmesh);
+    }
 }
 
-Mesh* ResourceManager::GetMeshByName(const std::string& target_name)
+MeshGroup* ResourceManager::GetMeshByName(const std::string& target_name)
 {
-    for(auto mesh : mesh_storage)
+    for(auto mesh : gmesh_storage)
     {
         if(mesh->name== target_name)
         {
@@ -48,9 +40,9 @@ Mesh* ResourceManager::GetMeshByName(const std::string& target_name)
     return nullptr;
 }
 
-Mesh* ResourceManager::GetMeshByTag(const unsigned& target_tag)
+MeshGroup* ResourceManager::GetMeshByTag(const unsigned& target_tag)
 {
-    for (auto mesh : mesh_storage)
+    for (auto mesh : gmesh_storage)
     {
         if (mesh->tag == target_tag)
         {
@@ -98,8 +90,8 @@ Object* ResourceManager::CreateObject(unsigned obj_tag, std::string obj_name, un
 {
     Object* new_obj = new Object();
 
-    new_obj->mesh = GetMeshByTag(mesh_tag);
-    new_obj->shader = shader_tag;
+    new_obj->gmesh = GetMeshByTag(mesh_tag);
+    new_obj->shader = GetShaderByTag(shader_tag);
     new_obj->tag = obj_tag;
     new_obj->name = obj_name;
     //new_obj->transform = ;

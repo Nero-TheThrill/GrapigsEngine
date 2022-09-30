@@ -35,13 +35,14 @@ namespace ParseHelper
 	}
 }
 
-std::vector<Dummy*> FBXImporter::Load(const char* file_path) noexcept
+std::vector<MeshGroup*> FBXImporter::Load(const char* file_path) noexcept
 {
 	FbxManager* p_manager = FbxManager::Create();
 	FbxIOSettings* ios = FbxIOSettings::Create(p_manager, IOSROOT);
 	p_manager->SetIOSettings(ios);
 	const FbxScene* p_scene = ImportFbx(p_manager, file_path);
 	FbxNode* pRoot = p_scene->GetRootNode();
+
 	auto dummies = Parse(pRoot);
 	p_manager->Destroy();
 	return dummies;
@@ -62,28 +63,31 @@ FbxScene* FBXImporter::ImportFbx(FbxManager* p_manager, const char* file_path) n
 	return scene;
 }
 
-std::vector<Dummy*> FBXImporter::Parse(FbxNode* p_root) noexcept
+std::vector<MeshGroup*> FBXImporter::Parse(FbxNode* p_root) noexcept
 {
-	std::vector<Dummy*> dummies;
+	std::vector<MeshGroup*> dummies;
 	if (p_root)
 	{
 		for (int i = 0; i < p_root->GetChildCount(); i++)
 		{
-			Dummy* dummy = new Dummy();
-			dummy->rootIndex = ParseNode(p_root->GetChild(i), -1, dummy->polygons);
-			dummy->polygons[dummy->rootIndex].transform = glm::mat4{ 1 };
-			dummy->name	 = p_root->GetName();
-			dummies.push_back(dummy);
+			MeshGroup* gmesh = new MeshGroup();
+			glGenVertexArrays(1, &gmesh->VAO);
+			glBindVertexArray(gmesh->VAO);
+			gmesh->rootIndex = ParseNode(p_root->GetChild(i), -1, gmesh->meshes);
+			gmesh->meshes[gmesh->rootIndex].transform = glm::mat4{ 1 };
+			gmesh->name	 = p_root->GetName();
+			dummies.push_back(gmesh);
+			glBindVertexArray(0);
 		}
 	}
 	return dummies;
 }
 
-int FBXImporter::ParseNode(FbxNode* p_node, int parent, std::vector<Polygon>& polygons) noexcept
+int FBXImporter::ParseNode(FbxNode* p_node, int parent, std::vector<Mesh>& polygons) noexcept
 {
 	const int index = static_cast<int>(polygons.size());
-	polygons.emplace_back(Polygon());
-	Polygon polygon{};
+	polygons.emplace_back(Mesh());
+	Mesh polygon{};
 	polygon.name = p_node->GetName();
 
 	for (int i = 0; i < p_node->GetNodeAttributeCount(); i++)
@@ -95,7 +99,7 @@ int FBXImporter::ParseNode(FbxNode* p_node, int parent, std::vector<Polygon>& po
 			case FbxNodeAttribute::eMesh:
 			{
 				// Read vertex, normal, uv data
-				polygon.attributes = GetAttribute(p_node->GetMesh());
+				polygon.verticies = GetAttribute(p_node->GetMesh());
 			}
 			break;
 			default:
@@ -117,10 +121,11 @@ int FBXImporter::ParseNode(FbxNode* p_node, int parent, std::vector<Polygon>& po
 		polygon.childrenIndex.push_back(child_index);
 	}
 	polygons[index] = polygon;
+	glGenBuffers(NUM_VBO, &(polygons[index].VBO));
 	return index;
 }
 
-std::vector<Attribute> FBXImporter::GetAttribute(const FbxMesh* p_mesh) noexcept
+std::vector<Vertex> FBXImporter::GetAttribute(const FbxMesh* p_mesh) noexcept
 {
 	std::vector<glm::vec3> ctrl_pts;
 	std::vector<glm::vec4> face_normal;
@@ -194,12 +199,12 @@ std::vector<Attribute> FBXImporter::GetAttribute(const FbxMesh* p_mesh) noexcept
 	for (auto& [key, v] : vertex_normal)
 		v = glm::vec4{ v.x / v.w, v.y / v.w, v.z / v.w, 0 };
 
-	std::vector<Attribute> attrib;
+	std::vector<Vertex> attrib;
 	attrib.reserve(indices.size());
 	for (int i = 0; i < static_cast<int>(indices.size()); ++i)
 	{
 		const glm::vec4 vertex{ ctrl_pts[indices[i]], 1 };
-		attrib.emplace_back(Attribute{ vertex, vertex_normal[indices[i]], face_normal[i] });
+		attrib.emplace_back(Vertex{ vertex, vertex_normal[indices[i]], face_normal[i] });
 	}
 
 	return attrib;

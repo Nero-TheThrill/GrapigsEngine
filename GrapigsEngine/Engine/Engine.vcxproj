@@ -83,6 +83,7 @@
     <ClInclude Include="FBXImporter.h" />
     <ClInclude Include="Input.h" />
     <ClInclude Include="ResourceManager.h" />
+    <ClInclude Include="ShaderSet.h" />
     <ClInclude Include="Transform.h" />
   </ItemGroup>
   <ItemGroup>
