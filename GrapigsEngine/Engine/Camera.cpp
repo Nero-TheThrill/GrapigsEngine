@@ -6,6 +6,7 @@
  */
 #include "Camera.h"
 
+#include <iostream>
 #include <ostream>	// std::ostream
 #include <gl/glew.h>	// gl functions for camera buffer
 #include <glm/gtc/matrix_transform.hpp>	// matrix calculation
@@ -147,27 +148,27 @@ void CameraBuffer::UpdateMainCamera() noexcept
 	const auto& cursor_dir = Input::GetMouseMovingDirection(MouseButton::Right);
 	if (cursor_dir.x != 0 || cursor_dir.y != 0)
 	{
-		switch (Input::GetMouseMod())
+		switch (Input::GetModifier())
 		{
-		case ModKey::None:
-		{
-			// TODO: Orbit camera
-		}
-		break;
-		case ModKey::Shift:
-		{
-			s_m_camera->Upward(static_cast<float>(cursor_dir.y) * 0.01f);
-			s_m_camera->Sideward(static_cast<float>(cursor_dir.x) * 0.01f);
-		}
-		break;
-		case ModKey::Control:
-		{
-			const float speed = std::sqrt(static_cast<float>(cursor_dir.x * cursor_dir.x + cursor_dir.y * cursor_dir.y));
-			const float sign = cursor_dir.y > 0 ? -1.f : 1.f;
-			s_m_camera->Forward(speed * sign * 0.001f);
-		}
-		break;
-		case ModKey::Alt: break;
+			case Modifier::None:
+			{
+				s_m_camera->Yaw(static_cast<float>(-cursor_dir.x) * 0.02f);
+				s_m_camera->Pitch(static_cast<float>(cursor_dir.y) * 0.02f);
+			}
+			break;
+			case Modifier::Shift:
+			{
+				s_m_camera->Upward(static_cast<float>(cursor_dir.y) * 0.002f);
+				s_m_camera->Sideward(static_cast<float>(cursor_dir.x) * 0.002f);
+			}
+			break;
+			case Modifier::Control:
+			{
+				const float sign = cursor_dir.y > 0 ? -1.f : 1.f;
+				s_m_camera->Forward(sign * 0.04f);
+			}
+			break;
+			case Modifier::Alt: break;
 		}
 	}
 }

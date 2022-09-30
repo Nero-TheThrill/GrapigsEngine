@@ -5,6 +5,7 @@
  *	File Name	: FBXImporter.h
  *	Desc		: Import fbx
  */
+#include <filesystem>
 #include <iostream>	// std::cerr
 #include <map>	// std::map
 #include <glm/gtc/matrix_transform.hpp> // transform matrix calculation
@@ -18,11 +19,11 @@ namespace ParseHelper
 		const auto& scaling = p_node->LclScaling.Get();
 
 		glm::mat4 transform{ 1 };
-		transform = glm::scale(glm::mat4(1), glm::vec3{ scaling[0], scaling[1], scaling[2] });
+		transform = glm::translate(transform, glm::vec3{ translation[0], translation[1], translation[2] });
 		transform = glm::rotate(transform, glm::radians(static_cast<float>(rotation[0])), glm::vec3{ 1, 0, 0 });
 		transform = glm::rotate(transform, glm::radians(static_cast<float>(rotation[1])), glm::vec3{ 0, 1, 0 });
 		transform = glm::rotate(transform, glm::radians(static_cast<float>(rotation[2])), glm::vec3{ 0, 0, 1 });
-		transform = glm::translate(transform, glm::vec3{ translation[0], translation[1], translation[2] });
+		transform = glm::scale(transform, glm::vec3{ scaling[0], scaling[1], scaling[2] });
 
 		return transform;
 	}
@@ -37,15 +38,26 @@ namespace ParseHelper
 
 std::vector<MeshGroup*> FBXImporter::Load(const char* file_path) noexcept
 {
+	const std::filesystem::path path(file_path);
+	if (std::filesystem::exists(file_path) == false)
+	{
+		std::cout << "[FBXImporter]: " << file_path << " does not exist." << std::endl;
+		return std::vector<MeshGroup*>{};
+	}
+	if (path.extension() != ".fbx")
+	{
+		std::cout << "[FBXImporter]: Unable to parse " << file_path << std::endl;
+		return std::vector<MeshGroup*>{};
+	}
+
 	FbxManager* p_manager = FbxManager::Create();
 	FbxIOSettings* ios = FbxIOSettings::Create(p_manager, IOSROOT);
 	p_manager->SetIOSettings(ios);
 	const FbxScene* p_scene = ImportFbx(p_manager, file_path);
 	FbxNode* pRoot = p_scene->GetRootNode();
-
-	auto dummies = Parse(pRoot);
+	auto meshes = Parse(pRoot);
 	p_manager->Destroy();
-	return dummies;
+	return meshes;
 }
 
 FbxScene* FBXImporter::ImportFbx(FbxManager* p_manager, const char* file_path) noexcept

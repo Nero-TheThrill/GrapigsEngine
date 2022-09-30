@@ -20,7 +20,7 @@ int main(void)
 	resource_manager.CompileShader(1, "../shader/test.vert", "../shader/test.frag");
 	//Mesh* mesh = GetCubeMesh();
 	//resource_manager.mesh_storage.push_back(mesh);
-	Object* obj = resource_manager.CreateObject(0, "cube", 0, 1);
+	Object* obj = resource_manager.CreateObject(0, "../test.fbx", 0, 1);
 
 	obj->transform.Translate(glm::vec3(0, 0, -55));
 	obj->transform.Scale(glm::vec3(0.2, 0.2, 0.2));

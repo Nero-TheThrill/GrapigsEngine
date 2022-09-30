@@ -87,7 +87,7 @@ void Application::Init(int width, int height, const char* title)
 			const_cast<glm::ivec2&>(Input::s_m_windowSize) = glm::ivec2(w, h);
 			CameraBuffer::s_m_aspectRatio = static_cast<float>(w) / static_cast<float>(h);
 		});
-	glfwSetKeyCallback(window, [](GLFWwindow* p_win, int k, int s, int a, int m) {Callback::Keyboard(p_win, k, s, a, m); });
+	glfwSetKeyCallback(window, [](GLFWwindow* p_win, int k, int s, int a, int m) {Input::KeyboardCallback(p_win, k, s, a, m); });
 	glfwSetDropCallback(window, [](GLFWwindow* p_win, int c, const char** p){	Callback::DragAndDrop(p_win, c, p);	});
 	glfwSetCursorPosCallback(window, [](GLFWwindow* p_win, double x, double y) {Input::CursorPosCallback(p_win, x, y); });
 	glfwSetMouseButtonCallback(window, [](GLFWwindow* p_win, int b, int a, int m) {Input::MouseButtonCallback(p_win, b, a, m); });
