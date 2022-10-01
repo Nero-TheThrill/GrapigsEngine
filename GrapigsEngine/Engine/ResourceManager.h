@@ -7,9 +7,37 @@
 #pragma once
 #include <vector>
 #include <string>
+#include <gl/glew.h>
 
 #include "Transform.h"
 #include "FBXImporter.h"
+
+enum class LightType
+{
+    POINT,
+    DIRECTIONAL,
+    SPOT
+};
+
+struct Light
+{
+    Transform m_transform;
+    LightType m_type = LightType::POINT;
+    glm::vec3 m_direction = glm::vec3{ -1,1,1 }; // only for directional
+    glm::vec3 m_ambient = glm::vec3{ 0.7f,0.7f,0.85f }, m_diffuse = glm::vec3{ 1,1,1 }, m_specular = glm::vec3{ 1,1,1 };// for all lights
+    float m_inner_angle = 0.33f, m_outer_angle = 0.65f, m_falloff = 0.35f;
+    glm::vec3 m_attenuation = glm::vec3(0.001f, 0.0005f, 0.00025f);
+};
+class Lights
+{
+public:
+    void Init();
+    void Update();
+    void AddLight(Light light);
+private:
+    std::vector<Light> lights;
+    GLuint m_ubo = 0;
+};
 
 class Object
 {

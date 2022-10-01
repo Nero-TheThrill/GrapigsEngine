@@ -10,6 +10,7 @@
 #include <map>			// std::map
 #include <glm/glm.hpp>	// glm
 
+
 enum class ShaderType
 {
 	None, Vertex, Fragment, Geometry, Tessellation_Control, Tessellation_Evaluation

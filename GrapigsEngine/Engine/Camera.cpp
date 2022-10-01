@@ -16,7 +16,7 @@
 
 Camera::Camera() noexcept
 	:
-	m_near(0.1f), m_far(100), m_fov(90),
+	m_near(0.1f), m_far(100), m_fov(60),
 	m_eye(0, 0, 3),
 	m_right(1, 0, 0),
 	m_up(0, 1, 0),
@@ -132,7 +132,7 @@ void CameraBuffer::SetMainCamera(Camera* p_camera) noexcept
 	if (s_m_handle < 1)
 	{
 		glCreateBuffers(1, &s_m_handle);
-		glNamedBufferStorage(s_m_handle, sizeof(glm::mat4) * 3, nullptr, GL_DYNAMIC_STORAGE_BIT);
+		glNamedBufferStorage(s_m_handle, sizeof(glm::mat4) * 3 + sizeof(glm::vec3) + sizeof(float) * 2, nullptr, GL_DYNAMIC_STORAGE_BIT);
 		glBindBufferBase(GL_UNIFORM_BUFFER, 0, s_m_handle);
 	}
 }
@@ -177,7 +177,9 @@ void CameraBuffer::Bind() noexcept
 	glNamedBufferSubData(s_m_handle, 0, sizeof(glm::mat4), &s_m_camera->m_worldToCamera[0][0]);
 	glNamedBufferSubData(s_m_handle, sizeof(glm::mat4), sizeof(glm::mat4), &s_m_camera->m_cameraToNDC[0][0]);
 	glNamedBufferSubData(s_m_handle, sizeof(glm::mat4) * 2, sizeof(glm::mat4), &s_m_camera->m_worldToNDC[0][0]);
-	glNamedBufferSubData(s_m_handle, sizeof(glm::mat4) * 3, sizeof(glm::vec3), &s_m_camera->Eye());
+	glNamedBufferSubData(s_m_handle, sizeof(glm::mat4) * 3, sizeof(glm::vec3), &s_m_camera->Eye()[0]);
+	glNamedBufferSubData(s_m_handle, sizeof(glm::mat4) * 3 + sizeof(glm::vec3), sizeof(float), &s_m_camera->m_near);
+	glNamedBufferSubData(s_m_handle, sizeof(glm::mat4) * 3 + sizeof(glm::vec3) + sizeof(float), sizeof(float), &s_m_camera->m_far);
 	glBindBuffer(GL_UNIFORM_BUFFER, s_m_handle);
 }
 

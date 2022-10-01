@@ -177,6 +177,7 @@ void ShaderProgram::SendUniform(const std::string& uniform_name, const glm::mat4
 	glUniformMatrix4fv(GetUniformLocation(uniform_name), 1, GL_FALSE, &value[0][0]);
 }
 
+
 void ShaderProgram::Clear() noexcept
 {
 	if (m_handle > 0)

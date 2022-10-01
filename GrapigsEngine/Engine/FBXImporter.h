@@ -23,12 +23,20 @@ struct Vertex
 	glm::vec4 face_normal{};
 };
 
+struct Material
+{
+    float ambient =0.4f;
+    float diffuse = 0.3f;
+    float specular = 0.2f;
+    unsigned texture = 0;
+};
 struct Mesh
 {
     std::string name{};
     glm::mat4 transform{ 1 };
     std::vector<Vertex> vertices;
     std::vector<int> children;
+    Material material;
     int parent = -1;
 };
 

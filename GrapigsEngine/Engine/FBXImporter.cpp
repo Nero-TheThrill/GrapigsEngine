@@ -10,7 +10,7 @@
 #include <map>	// std::map
 #include <gl/glew.h>
 #include <glm/gtc/matrix_transform.hpp> // transform matrix calculation
-
+#include <fbxsdk/scene/shading/fbxsurfacematerial.h>
 MeshGroup::~MeshGroup()
 {
 	Clear();
@@ -70,19 +70,24 @@ void MeshGroup::Draw(Primitive primitive, ShaderProgram* program) noexcept
 
 void MeshGroup::Draw(Primitive primitive, ShaderProgram* program, int index, glm::mat4 transform) const noexcept
 {
-	const auto& meshes = m_meshes[index];
-	const auto& vertex = meshes.vertices;
+	const auto& mesh = m_meshes[index];
+	const auto& vertex = mesh.vertices;
 
 	if (vertex.empty() == false)
 	{
-		program->SendUniform("u_localToModel", meshes.transform);
+		program->SendUniform("u_localToModel", mesh.transform);
+
+		program->SendUniform("o_ambient", mesh.material.ambient);
+		program->SendUniform("o_diffuse", mesh.material.diffuse);
+		program->SendUniform("o_specular", mesh.material.specular);
+
 		glNamedBufferSubData(m_vbo, 0, static_cast<GLsizeiptr>(sizeof(Vertex) * vertex.size()), vertex.data());
 		glDrawArrays(static_cast<GLenum>(primitive), 0, static_cast<GLsizei>(vertex.size()));
 	}
 
 	for (const auto& c : m_meshes[index].children)
 	{
-		Draw(primitive, program, c, transform * meshes.transform);
+		Draw(primitive, program, c, transform * mesh.transform);
 	}
 }
 
@@ -298,7 +303,48 @@ int FBXImporter::ParseNode(FbxNode* p_node, int parent, std::vector<Mesh>& meshe
 	meshes.emplace_back(Mesh());
 	Mesh mesh{};
 	mesh.name = p_node->GetName();
+	// TODO: Need to find applicable fbx file to test this.
+	//int mcount = p_node->GetSrcObjectCount<FbxSurfaceMaterial>();
+	//for (int i = 0; i < mcount; i++)
+	//{
+	//	FbxSurfaceMaterial* material = p_node->GetSrcObject<FbxSurfaceMaterial>(i);
+	//	if (material)
+	//	{
+	//		// This only gets the material of type sDiffuse, you probably need to traverse all Standard Material Property by its name to get all possible textures.
+	//		FbxProperty prop = material->FindProperty(FbxSurfaceMaterial::sDiffuse);
 
+	//		// Check if it's layeredtextures
+	//		int layered_texture_count = prop.GetSrcObjectCount<FbxLayeredTexture>();
+	//		if (layered_texture_count > 0)
+	//		{
+	//			for (int j = 0; j < layered_texture_count; j++)
+	//			{
+	//				FbxLayeredTexture* layered_texture = FbxCast<FbxLayeredTexture>(prop.GetSrcObject<FbxLayeredTexture>(j));
+	//				int lcount = layered_texture->GetSrcObjectCount<FbxTexture>();
+	//				for (int k = 0; k < lcount; k++)
+	//				{
+	//					FbxTexture* texture = FbxCast<FbxTexture>(layered_texture->GetSrcObject<FbxTexture>(k));
+	//					// Then, you can get all the properties of the texture, include its name
+	//					const char* texture_name = texture->GetName();
+	//					texture_name;
+	//				}
+	//			}
+	//		}
+	//		else
+	//		{
+	//			// Directly get textures
+	//			int texture_count = prop.GetSrcObjectCount<FbxTexture>();
+	//			for (int j = 0; j < texture_count; j++)
+	//			{
+	//				const FbxTexture* texture = FbxCast<FbxTexture>(prop.GetSrcObject<FbxTexture>(j));
+	//				// Then, you can get all the properties of the texture, include its name
+	//				const char* texture_name = texture->GetName();
+	//				texture_name;
+	//			}
+	//		}
+	//	}
+
+	//}
 	for (int i = 0; i < p_node->GetNodeAttributeCount(); i++)
 	{
 		if (const FbxNodeAttribute* attribute = p_node->GetNodeAttributeByIndex(i))
@@ -315,6 +361,7 @@ int FBXImporter::ParseNode(FbxNode* p_node, int parent, std::vector<Mesh>& meshe
 					s_m_meshIndex = index;
 				}
 			}
+
 			break;
 			default:
 				break;

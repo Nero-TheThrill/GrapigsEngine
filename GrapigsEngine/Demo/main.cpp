@@ -22,12 +22,24 @@ int main(void)
 	Application::SetBackgroundColor(180, 210, 200);
 
 	rscmgr.CreateShader(shader_files);
-	rscmgr.LoadFbxAndCreateObject("model/jeep_done.fbx", 0);
+	rscmgr.LoadFbxAndCreateObject("model/PenguinBaseMesh.fbx", 0);
+
+	Lights lights;
+	Light l1,l2;
+	l1.m_transform.Translate(glm::vec3(0, -5, 5));
+	l1.m_type = LightType::DIRECTIONAL;
+	l2.m_transform.Translate(glm::vec3(0, -5, 5));
+	l2.m_type = LightType::POINT;
+	lights.AddLight(l1);
+	lights.AddLight(l2);
+	lights.Init();
+
+
 
 	while(application.ShouldQuit() == false)
 	{
 		application.BeginUpdate();
-
+		lights.Update();
 		rscmgr.DrawTriangles();
 		//ImGui::ShowDemoWindow();
 		application.EndUpdate();
