@@ -36,7 +36,7 @@
     <ClInclude Include="FBXImporter.h">
       <Filter>Windows\ResourceManager</Filter>
     </ClInclude>
-    <ClInclude Include="ShaderSet.h">
+    <ClInclude Include="Shader.h">
       <Filter>Windows\ResourceManager\Shader</Filter>
     </ClInclude>
   </ItemGroup>
@@ -58,6 +58,9 @@
     </ClCompile>
     <ClCompile Include="FBXImporter.cpp">
       <Filter>Windows\ResourceManager</Filter>
+    </ClCompile>
+    <ClCompile Include="Shader.cpp">
+      <Filter>Windows\ResourceManager\Shader</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

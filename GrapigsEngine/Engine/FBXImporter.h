@@ -8,9 +8,13 @@
 #include <fbxsdk.h>	// Fbx variables and functions
 #include <vector>	// std::vector
 #include <glm/glm.hpp>	// glm
-#include <gl/glew.h>
+#include "Shader.h" // ShaderProgram
 
-#define NUM_VBO 3
+enum class Primitive
+{
+    Lines = 0x001, LineLoop = 0x002, LineStrip = 0x003, Triangles = 0x004, TriangleStrip = 0x005, TriangleFan = 0x006
+
+};
 
 struct Vertex
 {
@@ -21,80 +25,52 @@ struct Vertex
 
 struct Mesh
 {
-	std::string name{};
-	glm::mat4 transform{ 1 };
-	std::vector<Vertex> verticies;
-	std::vector<int> childrenIndex;
-	int parentIndex = -1;
-
-    GLuint VBO;
-
-    void PopulateBuffers() const
-    {
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(verticies[0]) * verticies.size(), verticies.data(), GL_STATIC_DRAW);
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 48, (void*)0);
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 48, (void*)16);
-        glEnableVertexAttribArray(2);
-        glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 48, (void*)32);
-
-
-
-    }
-    void DrawTriangles() const
-    {
-
-        PopulateBuffers();
-        glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(verticies.size()));
-
-    }
-    void DrawLines() const
-    {
-
-        PopulateBuffers();
-        glDrawArrays(GL_LINES, 0, static_cast<GLsizei>(verticies.size()));
-
-    }
-
+    std::string name{};
+    glm::mat4 transform{ 1 };
+    std::vector<Vertex> vertices;
+    std::vector<int> children;
+    int parent = -1;
 };
 
-struct MeshGroup
+class MeshGroup
 {
-    GLuint VAO;
-	std::vector<Mesh> meshes;
-	int rootIndex;
-	std::string name;
-	unsigned tag = 0;
+public:
+    MeshGroup() = default;
+    ~MeshGroup();
+    void InitBuffers(int largest_index) noexcept;
+    void Clear() noexcept;
+    void Draw(Primitive primitive, ShaderProgram* program) noexcept;
 
-    void DrawTriangles()
-    {
-        glBindVertexArray(VAO);
-        for (auto mesh : meshes)
-        {
-            mesh.DrawTriangles();
-        }
-        glBindVertexArray(0);
-    }
-    void DrawLines()
-    {
-        glBindVertexArray(VAO);
-        for (auto mesh : meshes)
-        {
-            mesh.DrawLines();
-        }
-        glBindVertexArray(0);
-    }
+    std::string m_name{};
+    int m_root = -1;
+    std::vector<Mesh> m_meshes;
+    const unsigned m_tag = 0;
+private:
+    void Draw(Primitive primitive, ShaderProgram* program, int index, glm::mat4 transform) const noexcept;
+    unsigned m_vao = 0, m_vbo = 0;
 };
 
 class FBXImporter
 {
 public:
 	static std::vector<MeshGroup*> Load(const char* file_path) noexcept;
-	static FbxScene* ImportFbx(FbxManager* p_manager, const char* file_path) noexcept;
 private:
+    static FbxScene* ImportFbx(FbxManager* p_manager, const char* file_path) noexcept;
 	static std::vector<MeshGroup*> Parse(FbxNode* p_root) noexcept;
-	static int ParseNode(FbxNode* p_node, int parent, std::vector<Mesh>& polygons) noexcept;
-	static std::vector<Vertex> GetAttribute(const FbxMesh* p_mesh) noexcept;
+	static int ParseNode(FbxNode* p_node, int parent, std::vector<Mesh>& meshes) noexcept;
+	static std::vector<Vertex> GetVertices(const FbxMesh* p_mesh) noexcept;
+    static std::size_t s_m_verticesCount;
+    static int s_m_meshIndex;
+};
+
+class FBXNodePrinter
+{
+public:
+    static void Print(const FbxNode* p_root) noexcept;
+private:
+    [[nodiscard]] static constexpr std::string GetAttributeTypeName(const FbxNodeAttribute::EType type) noexcept;
+    static void PrintAttribute(const FbxNodeAttribute* p_attribute) noexcept;
+    static void PrintNode(const FbxNode* p_node) noexcept;
+    static void PrintTabs() noexcept;
+    static int s_tab;
 };

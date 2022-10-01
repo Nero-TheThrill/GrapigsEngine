@@ -7,71 +7,51 @@
 #pragma once
 #include <vector>
 #include <string>
-#include <gl/glew.h>	
-#include <GLFW/glfw3.h>
 
 #include "Transform.h"
-#include "glm/glm.hpp"
 #include "FBXImporter.h"
-#include "ShaderSet.h"
 
-struct Object
+class Object
 {
-    Transform transform;
-    GLuint shader = 0;
-    MeshGroup* gmesh = 0;
-    unsigned tag = 0;
-    std::string name;
+public:
+    Transform m_transform;
+    unsigned m_tag = 0;
+    std::string m_name;
+    ShaderProgram* m_shader = nullptr;
+    MeshGroup* m_meshGroup = nullptr;
+    glm::vec4 m_color = glm::vec4{1};
 
-    void DrawTriangles()
-    {
-        glUseProgram(shader);
-        Set(shader, "model", transform.GetTransformMatrix());
-        gmesh->DrawTriangles();
-        glUseProgram(0);
-    };
-    void DrawLines()
-    {
-        glUseProgram(shader);
-        Set(shader, "model", transform.GetTransformMatrix());
-        gmesh->DrawLines();
-        glUseProgram(0);
-    };
+    void Draw(Primitive primitive) const noexcept;
 };
 
 
 class ResourceManager
 {
 public:
-    ResourceManager();
+    ResourceManager() = default;
     ~ResourceManager();
 
-    void LoadMesh(const std::string& path);
-    MeshGroup* GetMeshByName(const std::string& target_name);
-    MeshGroup* GetMeshByTag(const unsigned& target_tag);
+    void Clear() noexcept;
 
-    Object* CreateObject(unsigned obj_tag, std::string obj_name, unsigned mesh_tag, unsigned shader_tag);
-    Object* GetObjectByName(std::string target_name);
-    std::vector<Object*> GetObjectByTag(const unsigned& target_tag);
-    //void AddObject(Object* obj);
+    void LoadFbx(const char* fbx_file_path) noexcept;
+    void LoadFbxAndCreateObject(const char* fbx_file_path, int shader_tag) noexcept;
+
+    [[nodiscard]] MeshGroup* GetMeshByName(const std::string& target_name) const noexcept;
+    [[nodiscard]] MeshGroup* GetMeshByTag(const unsigned& target_tag) const noexcept;
+    [[nodiscard]] Object* GetObjectByName(std::string target_name) const noexcept;
+    [[nodiscard]] std::vector<Object*> GetObjectByTag(const unsigned& target_tag) const noexcept;
+    [[nodiscard]] ShaderProgram* GetShaderByTag(unsigned tag) const noexcept;
+
+    ShaderProgram* CreateShader(const std::vector<std::pair<ShaderType, std::filesystem::path>>& shader_files) noexcept;
+    Object* CreateObject(unsigned tag, const std::string& name, unsigned mesh_tag, unsigned shader_tag) noexcept;
     void DeleteObject(Object* obj);
 
-
-    void CompileShader(unsigned tag, const std::string& vert_path, const std::string& frag_path);
-    GLuint GetShaderByTag(const unsigned& target_tag);
-    
-
+    void DrawLines() const noexcept;
+    void DrawTriangles() const noexcept;
 private:
     std::vector<Object*> obj_storage;
     std::vector<MeshGroup*> gmesh_storage;
-    std::vector<std::pair<unsigned, GLuint>> shader_storage;
-    
-    GLuint LoadVertexShader(const std::string& path);
-    GLuint LoadFragmentShader(const std::string& path);
-
-    FBXImporter importer;
-
-
+    std::vector<ShaderProgram*> shader_storage;
     std::string log_string;
 
 };

@@ -6,17 +6,11 @@
  */
 #include "Camera.h"
 
-#include <iostream>
 #include <ostream>	// std::ostream
 #include <gl/glew.h>	// gl functions for camera buffer
 #include <glm/gtc/matrix_transform.hpp>	// matrix calculation
 
 #include "Input.h"
-
-std::ostream& operator<<(std::ostream& os, const glm::vec3& v)
-{
-	return os << "(" << v.x << ", " << v.y << ", " << v.z << ")";
-}
 
  /* Camera - start -------------------------------------------------------------------------------*/
 
@@ -138,7 +132,7 @@ void CameraBuffer::SetMainCamera(Camera* p_camera) noexcept
 	if (s_m_handle < 1)
 	{
 		glCreateBuffers(1, &s_m_handle);
-		glNamedBufferStorage(s_m_handle, sizeof(glm::mat4), nullptr, GL_DYNAMIC_STORAGE_BIT);
+		glNamedBufferStorage(s_m_handle, sizeof(glm::mat4) * 3, nullptr, GL_DYNAMIC_STORAGE_BIT);
 		glBindBufferBase(GL_UNIFORM_BUFFER, 0, s_m_handle);
 	}
 }
@@ -180,7 +174,10 @@ const Camera* CameraBuffer::GetMainCamera() noexcept
 
 void CameraBuffer::Bind() noexcept
 {
-	glNamedBufferSubData(s_m_handle, 0, sizeof(glm::mat4), &s_m_camera->m_worldToNDC[0][0]);
+	glNamedBufferSubData(s_m_handle, 0, sizeof(glm::mat4), &s_m_camera->m_worldToCamera[0][0]);
+	glNamedBufferSubData(s_m_handle, sizeof(glm::mat4), sizeof(glm::mat4), &s_m_camera->m_cameraToNDC[0][0]);
+	glNamedBufferSubData(s_m_handle, sizeof(glm::mat4) * 2, sizeof(glm::mat4), &s_m_camera->m_worldToNDC[0][0]);
+	glNamedBufferSubData(s_m_handle, sizeof(glm::mat4) * 3, sizeof(glm::vec3), &s_m_camera->Eye());
 	glBindBuffer(GL_UNIFORM_BUFFER, s_m_handle);
 }
 

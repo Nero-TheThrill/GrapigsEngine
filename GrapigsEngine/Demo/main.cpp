@@ -6,36 +6,30 @@
  */	
 
 #include "Application.h"
-
 #include "ResourceManager.h"
 
 int main(void)
 {
 	Application application;
-	ResourceManager resource_manager;
+	ResourceManager rscmgr;
+
+	const std::vector<std::pair<ShaderType, std::filesystem::path>> shader_files = {
+			std::make_pair(ShaderType::Vertex, "shader/test.vert"),
+			std::make_pair(ShaderType::Fragment, "shader/test.frag")
+	};
 
 	application.Init();
-	resource_manager.LoadMesh("../test.fbx");
 	Application::SetBackgroundColor(180, 210, 200);
-	resource_manager.CompileShader(1, "../shader/test.vert", "../shader/test.frag");
-	//Mesh* mesh = GetCubeMesh();
-	//resource_manager.mesh_storage.push_back(mesh);
-	Object* obj = resource_manager.CreateObject(0, "../test.fbx", 0, 1);
 
-	obj->transform.Translate(glm::vec3(0, 0, -55));
-	obj->transform.Scale(glm::vec3(0.2, 0.2, 0.2));
+	rscmgr.CreateShader(shader_files);
+	rscmgr.LoadFbxAndCreateObject("model/jeep_done.fbx", 0);
 
 	while(application.ShouldQuit() == false)
 	{
 		application.BeginUpdate();
 
-		obj->DrawTriangles();
-		///////////////////////////////////////////////////////////
-		/*
-		 *	draw/rendering functions
-		 */
+		rscmgr.DrawTriangles();
 		//ImGui::ShowDemoWindow();
-		///////////////////////////////////////////////////////////
 		application.EndUpdate();
 	}
 	//delete mesh;

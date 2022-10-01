@@ -5,7 +5,7 @@ class Transform
 {
 public:
     void Init();
-    glm::mat4 GetTransformMatrix();
+    glm::mat4 GetTransformMatrix() const;
     ~Transform();
     void Translate(glm::vec3 input);
     void Rotate(float degree, glm::vec3 v);

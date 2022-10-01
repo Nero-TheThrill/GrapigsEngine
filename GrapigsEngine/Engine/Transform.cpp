@@ -5,7 +5,7 @@ void Transform::Init()
     transform = glm::mat4(1.0f);
 }
 
-glm::mat4 Transform::GetTransformMatrix()
+glm::mat4 Transform::GetTransformMatrix()const
 {
     return translate * rotate * scale;
 }
