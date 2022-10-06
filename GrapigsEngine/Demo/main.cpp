@@ -5,8 +5,6 @@
  *	Desc		: main function
  */
 
-#include <imgui.h>
-
 #include "Application.h"
 #include "Input.h"
 #include "ResourceManager.h"
@@ -25,7 +23,9 @@ int main(void)
 	Application::SetBackgroundColor(180, 210, 200);
 
 	rscmgr.CreateShader(shader_files);
-	rscmgr.LoadFbxAndCreateObject("model/PenguinBaseMesh.fbx", 0);
+	Object* obj = rscmgr.LoadFbxAndCreateObject("model/PenguinBaseMesh.fbx", 0);
+	FBXNodePrinter::SetFileToShowInfo("model/PenguinBaseMesh.fbx");
+	rscmgr.SetGUIObject(obj);
 
 	Lights lights;
 	Light l1,l2;
@@ -44,14 +44,15 @@ int main(void)
 		if(Input::DropAndDropDetected())
 		{
 			const auto paths = Input::GetDroppedPaths();
-			FBXNodePrinter::SetFileToShowInfo(paths[0]);
 			for(const auto& p : paths)
 			{
-				rscmgr.LoadFbxAndCreateObject(p.string().c_str(), 0);
+				FBXNodePrinter::SetFileToShowInfo(p);
+				obj = rscmgr.LoadFbxAndCreateObject(p.string().c_str(), 0);
+				rscmgr.SetGUIObject(obj);
 			}
 		}
-
 		FBXNodePrinter::UpdateGUI();
+		rscmgr.UpdateObjectGUI();
 
 		lights.Update();
 		rscmgr.DrawTriangles();

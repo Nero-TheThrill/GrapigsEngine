@@ -102,6 +102,7 @@ void Application::Init(int width, int height, const char* title)
 	ImGui_ImplOpenGL3_Init("#version 460");
 
 	CameraBuffer::SetMainCamera(new Camera());
+	CameraBuffer::GetMainCamera()->Set(glm::vec3{ 0, 3, 5 });
 }
 
 

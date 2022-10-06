@@ -5,7 +5,9 @@
  *	Desc		: Manage shader, object
  */
 #include "ResourceManager.h"
-#include <iostream>
+
+#include <imgui.h>  // ImGui::
+#include <iostream> // std::cout
 
 
 void Lights::Init()
@@ -31,7 +33,7 @@ void Lights::Update()
     {
         glBufferSubData(GL_UNIFORM_BUFFER, 16 + iter * lightstride, sizeof(unsigned), &(light.m_type));
         glBufferSubData(GL_UNIFORM_BUFFER, 16 + iter * lightstride + 16, sizeof(glm::vec3), &light.m_direction[0]);
-        glBufferSubData(GL_UNIFORM_BUFFER, 16 + iter * lightstride + 32, sizeof(glm::vec3), &light.m_transform.position[0]);
+        glBufferSubData(GL_UNIFORM_BUFFER, 16 + iter * lightstride + 32, sizeof(glm::vec3), &light.m_transform.GetPosition()[0]);
         glBufferSubData(GL_UNIFORM_BUFFER, 16 + iter * lightstride + 48, sizeof(glm::vec3), &light.m_ambient);
         glBufferSubData(GL_UNIFORM_BUFFER, 16 + iter * lightstride + 64, sizeof(glm::vec3), &light.m_diffuse);
         glBufferSubData(GL_UNIFORM_BUFFER, 16 + iter * lightstride + 80, sizeof(glm::vec3), &light.m_specular);
@@ -51,11 +53,12 @@ void Lights::AddLight(Light light)
 
 void Object::Draw(Primitive primitive) const noexcept
 {
-    m_shader->Use();
-    m_shader->SendUniform("u_color", m_color);
-    m_shader->SendUniform("u_modelToWorld", m_transform.GetTransformMatrix());
-    m_meshGroup->Draw(primitive, m_shader);
-    m_shader->UnUse();
+    m_p_shader->Use();
+    m_p_shader->SendUniform("u_color", m_color);
+    m_p_shader->SendUniform("u_modelToWorld", m_transform.GetTransformMatrix());
+    for(const auto& m: m_p_meshGroups)
+        m->Draw(primitive, m_p_shader);
+    m_p_shader->UnUse();
 }
 
 ResourceManager::~ResourceManager()
@@ -65,8 +68,12 @@ ResourceManager::~ResourceManager()
 
 void ResourceManager::Clear() noexcept
 {
-    for (const auto& m : gmesh_storage)
-        delete m;
+    for (auto& group : gmesh_storage)
+    {
+        for (const auto& m : group)
+            delete m;
+        group.clear();
+    }
     gmesh_storage.clear();
     for (const auto& s : shader_storage)
         delete s;
@@ -76,47 +83,26 @@ void ResourceManager::Clear() noexcept
     obj_storage.clear();
 }
 
-void ResourceManager::LoadFbx(const char* fbx_file_path) noexcept
+unsigned ResourceManager::LoadFbx(const char* fbx_file_path) noexcept
 {
     const auto& meshes = FBXImporter::Load(fbx_file_path);
-    for(const auto& m : meshes)
-    {
-        const_cast<unsigned&>(m->m_tag) = static_cast<unsigned>(gmesh_storage.size());
-        gmesh_storage.push_back(m);
-    }
+    const auto tag = static_cast<unsigned>(gmesh_storage.size());
+    gmesh_storage.push_back(meshes);
+    return tag;
 }
 
-void ResourceManager::LoadFbxAndCreateObject(const char* fbx_file_path, int shader_tag) noexcept
+Object* ResourceManager::LoadFbxAndCreateObject(const char* fbx_file_path, int shader_tag) noexcept
 {
-    const auto& meshes = FBXImporter::Load(fbx_file_path);
-    for (const auto& m : meshes)
-    {
-        const_cast<unsigned&>(m->m_tag) = static_cast<unsigned>(gmesh_storage.size());
-        gmesh_storage.push_back(m);
-        CreateObject(0, m->m_name, m->m_tag, shader_tag);
-    }
-}
-
-MeshGroup* ResourceManager::GetMeshByName(const std::string& target_name) const noexcept
-{
-    for(const auto& mesh : gmesh_storage)
-    {
-        if(mesh->m_name== target_name)
-            return mesh;
-    }
-    std::cout << "Mesh Not Found. Name : " << target_name << std::endl;
-    return nullptr;
+    const std::filesystem::path path{ fbx_file_path };
+    return CreateObject(0, path.stem().string(), LoadFbx(fbx_file_path), shader_tag);
 }
  
-MeshGroup* ResourceManager::GetMeshByTag(const unsigned& target_tag) const noexcept
+std::vector<MeshGroup*> ResourceManager::GetMeshByTag(const unsigned& target_tag) const noexcept
 {
-    for (const auto& mesh : gmesh_storage)
-    {
-        if (mesh->m_tag == target_tag)
-            return mesh;
-    }
+    if (target_tag < gmesh_storage.size())
+        return gmesh_storage[target_tag];
     std::cout << "Mesh Not Found. Tag : " << target_tag << std::endl;
-    return nullptr;
+    return std::vector<MeshGroup*>{};
 }
 
 Object* ResourceManager::GetObjectByName(std::string target_name) const noexcept
@@ -160,8 +146,8 @@ Object* ResourceManager::CreateObject(unsigned tag, const std::string& name, uns
 {
     Object* new_obj = new Object();
 
-    new_obj->m_meshGroup = GetMeshByTag(mesh_tag);
-    new_obj->m_shader = GetShaderByTag(shader_tag);
+    new_obj->m_p_meshGroups = GetMeshByTag(mesh_tag);
+    new_obj->m_p_shader = GetShaderByTag(shader_tag);
     const_cast<unsigned&>(new_obj->m_tag) = tag;
     new_obj->m_name = name;
 
@@ -192,5 +178,68 @@ void ResourceManager::DrawTriangles() const noexcept
     for (const auto& obj : obj_storage)
     {
         obj->Draw(Primitive::Triangles);
+    }
+}
+
+void ResourceManager::SetGUIObject(Object* obj) noexcept
+{
+    m_guiObject.object = obj;
+    m_guiObject.position = obj->m_transform.GetPosition();
+    m_guiObject.rotation = obj->m_transform.GetRotation();
+    m_guiObject.scaling = obj->m_transform.GetScaling();
+    m_guiObject.scale = 1;
+    m_guiObject.prevScale = 1;
+}
+
+void ResourceManager::UpdateObjectGUI() noexcept
+{
+    ImGui::Begin("OBJECT", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+    {
+        m_guiObject.DrawGUI();
+    }
+    ImGui::End();
+}
+
+void ResourceManager::GUIObject::DrawGUI() noexcept
+{
+    ImGui::TextColored(ImVec4{ 1, 1, 0, 1 }, object->m_name.c_str());
+    if (ImGui::DragFloat3("Translation", &position[0], 0.01f, 0, 0, "%.2f"))
+        object->m_transform.Translate(position);
+    if (ImGui::DragFloat3("Rotation", &rotation[0], 1, 0, 0, "%.1f"))
+    {
+        if (rotation.x > 360)
+            rotation.x = 0;
+        else if (rotation.x < 0)
+            rotation.x = 360;
+        if (rotation.y > 360)
+            rotation.y = 0;
+        else if (rotation.y < 0)
+            rotation.y = 360;
+        if (rotation.z > 360)
+            rotation.z = 0;
+        else if (rotation.z < 0)
+            rotation.z = 360;
+        object->m_transform.Rotate(rotation.x, rotation.y, rotation.z);
+    }
+    if (ImGui::DragFloat3("Scaling", &scaling[0], 0.01f, 0, 0, "%.2f"))
+    {
+        if (scaling.x < std::numeric_limits<float>::epsilon())
+            scaling.x = 0.001f;
+        if (scaling.y < std::numeric_limits<float>::epsilon())
+            scaling.y = 0.001f;
+        if (scaling.z < std::numeric_limits<float>::epsilon())
+            scaling.z = 0.001f;
+        object->m_transform.Scale(scaling);
+        scale = 1;
+        prevScale = 1;
+    }
+    if(ImGui::DragFloat("Scale by", &scale, 0.01f, 0, 0, "%.2f"))
+    {
+        if (scale < std::numeric_limits<float>::epsilon())
+            scale = 0.001f;
+        
+        scaling *= (scale / prevScale);
+        object->m_transform.Scale(scaling * scale);
+        prevScale = scale;
     }
 }

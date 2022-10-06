@@ -249,6 +249,7 @@ void FBXNodePrinter::SetFileToShowInfo(const std::filesystem::path& path) noexce
 {
 	s_m_fileStatus.clear();
 	s_m_tree.clear();
+	s_m_treeHead.clear();
 
 	s_m_filePath = path.string();
 	if (std::filesystem::exists(s_m_filePath) == false)

@@ -43,7 +43,7 @@ public:
 	static void Clear() noexcept;
 	static void SetMainCamera(Camera* p_camera) noexcept;
 	static void UpdateMainCamera() noexcept;
-	static const Camera* GetMainCamera() noexcept;
+	static Camera* GetMainCamera() noexcept;
 	static void Bind() noexcept;
 	static float s_m_aspectRatio;
 	static Camera* s_m_camera;

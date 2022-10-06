@@ -45,8 +45,8 @@ public:
     Transform m_transform;
     unsigned m_tag = 0;
     std::string m_name;
-    ShaderProgram* m_shader = nullptr;
-    MeshGroup* m_meshGroup = nullptr;
+    ShaderProgram* m_p_shader = nullptr;
+    std::vector<MeshGroup*> m_p_meshGroups;
     glm::vec4 m_color = glm::vec4{1};
 
     void Draw(Primitive primitive) const noexcept;
@@ -61,11 +61,10 @@ public:
 
     void Clear() noexcept;
 
-    void LoadFbx(const char* fbx_file_path) noexcept;
-    void LoadFbxAndCreateObject(const char* fbx_file_path, int shader_tag) noexcept;
+    unsigned LoadFbx(const char* fbx_file_path) noexcept;
+    Object* LoadFbxAndCreateObject(const char* fbx_file_path, int shader_tag) noexcept;
 
-    [[nodiscard]] MeshGroup* GetMeshByName(const std::string& target_name) const noexcept;
-    [[nodiscard]] MeshGroup* GetMeshByTag(const unsigned& target_tag) const noexcept;
+    [[nodiscard]] std::vector<MeshGroup*> GetMeshByTag(const unsigned& target_tag) const noexcept;
     [[nodiscard]] Object* GetObjectByName(std::string target_name) const noexcept;
     [[nodiscard]] std::vector<Object*> GetObjectByTag(const unsigned& target_tag) const noexcept;
     [[nodiscard]] ShaderProgram* GetShaderByTag(unsigned tag) const noexcept;
@@ -76,11 +75,26 @@ public:
 
     void DrawLines() const noexcept;
     void DrawTriangles() const noexcept;
+
 private:
     std::vector<Object*> obj_storage;
-    std::vector<MeshGroup*> gmesh_storage;
+    std::vector<std::vector<MeshGroup*>> gmesh_storage;
     std::vector<ShaderProgram*> shader_storage;
     std::string log_string;
-
+public:
+    void SetGUIObject(Object* obj) noexcept;
+    void UpdateObjectGUI() noexcept;
+private:
+    struct GUIObject
+    {
+        Object* object;
+        glm::vec3 position;
+        glm::vec3 rotation;
+        glm::vec3 scaling;
+        float scale;
+        float prevScale;
+        void DrawGUI() noexcept;
+    };
+    GUIObject m_guiObject;
 };
 

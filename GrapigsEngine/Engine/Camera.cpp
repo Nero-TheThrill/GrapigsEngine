@@ -198,7 +198,7 @@ void CameraBuffer::UpdateMainCamera() noexcept
 		s_m_camera->Reset();
 }
 
-const Camera* CameraBuffer::GetMainCamera() noexcept
+Camera* CameraBuffer::GetMainCamera() noexcept
 {
 	return s_m_camera;
 }
