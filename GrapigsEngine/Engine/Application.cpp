@@ -88,7 +88,7 @@ void Application::Init(int width, int height, const char* title)
 			CameraBuffer::s_m_aspectRatio = static_cast<float>(w) / static_cast<float>(h);
 		});
 	glfwSetKeyCallback(window, [](GLFWwindow* p_win, int k, int s, int a, int m) {Input::KeyboardCallback(p_win, k, s, a, m); });
-	glfwSetDropCallback(window, [](GLFWwindow* p_win, int c, const char** p){	Callback::DragAndDrop(p_win, c, p);	});
+	glfwSetDropCallback(window, [](GLFWwindow* p_win, int c, const char** p){	Input::DragAndDropCallback(p_win, c, p);	});
 	glfwSetCursorPosCallback(window, [](GLFWwindow* p_win, double x, double y) {Input::CursorPosCallback(p_win, x, y); });
 	glfwSetMouseButtonCallback(window, [](GLFWwindow* p_win, int b, int a, int m) {Input::MouseButtonCallback(p_win, b, a, m); });
 	glfwSetScrollCallback(window, [](GLFWwindow* p_win, double x, double y) {Input::ScrollCallback(p_win, x, y); });
@@ -178,20 +178,13 @@ namespace Callback
 		}
 	}
 
-	void WindowSizeChanged([[maybe_unused]] void* p_window, int width, int height) noexcept
+	void WindowSizeChanged([[maybe_unused]] void* p_window, int weight, int height) noexcept
 	{
-		if (width == 0 || height == 0)
+		if (weight == 0 || height == 0)
 			return;
-		glViewport(0, 0, width, height);
-	}
-
-	void DragAndDrop([[maybe_unused]] void* p_window, int count, const char** paths) noexcept
-	{
-		for (int i = 0; i < count; ++i)
-		{
-			const std::filesystem::path file_path{ paths[i] };
-			std::cout << "[Window]: Drag and Drop detected: " << file_path << std::endl;
-		}
+		glViewport(0, 0, weight, height);
+		CameraBuffer::s_m_aspectRatio = static_cast<float>(weight) / static_cast<float>(height);
+		Input::s_m_windowSize = glm::ivec2(weight, height);
 	}
 
 	void OpenGLDebug(unsigned source, unsigned type, [[maybe_unused]] unsigned id, unsigned severity, [[maybe_unused]] int length,

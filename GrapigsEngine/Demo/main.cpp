@@ -3,9 +3,12 @@
  *	Date		: 09/05/22
  *	File Name	: main.cpp
  *	Desc		: main function
- */	
+ */
+
+#include <imgui.h>
 
 #include "Application.h"
+#include "Input.h"
 #include "ResourceManager.h"
 
 int main(void)
@@ -34,14 +37,25 @@ int main(void)
 	lights.AddLight(l2);
 	lights.Init();
 
-
-
 	while(application.ShouldQuit() == false)
 	{
 		application.BeginUpdate();
+
+		if(Input::DropAndDropDetected())
+		{
+			const auto paths = Input::GetDroppedPaths();
+			FBXNodePrinter::SetFileToShowInfo(paths[0]);
+			for(const auto& p : paths)
+			{
+				rscmgr.LoadFbxAndCreateObject(p.string().c_str(), 0);
+			}
+		}
+
+		FBXNodePrinter::UpdateGUI();
+
 		lights.Update();
 		rscmgr.DrawTriangles();
-		//ImGui::ShowDemoWindow();
+
 		application.EndUpdate();
 	}
 	//delete mesh;

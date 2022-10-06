@@ -1,16 +1,19 @@
-#include "FBXImporter.h"
 /*
  *	Author		: Jina Hyun
  *	Date		: 09/29/22
  *	File Name	: FBXImporter.h
  *	Desc		: Import fbx
  */
+#include "FBXImporter.h"
+
 #include <filesystem>	// std::filesystem
 #include <iostream>	// std::cerr
 #include <map>	// std::map
 #include <gl/glew.h>
 #include <glm/gtc/matrix_transform.hpp> // transform matrix calculation
-#include <fbxsdk/scene/shading/fbxsurfacematerial.h>
+#include <sstream>	// strinstream
+#include "imgui.h"	// imgui
+
 MeshGroup::~MeshGroup()
 {
 	Clear();
@@ -129,6 +132,20 @@ namespace ParseHelper
 		p_mesh->GetPolygonVertexNormal(poly, vert, normal);
 		return glm::vec3{ normal[0], normal[1],normal[2] };
 	}
+
+	template <typename T>
+	std::string ToString(const T a_value, const int n = 2)
+	{
+		std::ostringstream out;
+		out.precision(n);
+		out << std::fixed << a_value;
+		return out.str();
+	}
+
+	std::string ToString(const FbxDouble3& vec3)
+	{
+		return "(" + ToString(vec3.mData[0]) + ", " + ToString(vec3.mData[1]) + ", " + ToString(vec3.mData[2]) + ")";
+	}
 }
 
 
@@ -136,7 +153,10 @@ namespace ParseHelper
 /*-----------------------------------------------------------------------------------------------*/
 /* FBXNodePrinter - start -----------------------------------------------------------------------*/
 
-
+std::string FBXNodePrinter::s_m_filePath{};
+std::string FBXNodePrinter::s_m_fileStatus{};
+std::vector<int> FBXNodePrinter::s_m_treeHead;
+std::vector<FBXNodePrinter::TreeNode> FBXNodePrinter::s_m_tree;
 int FBXNodePrinter::s_tab = 0;
 
 constexpr std::string FBXNodePrinter::GetAttributeTypeName(const FbxNodeAttribute::EType type) noexcept
@@ -167,6 +187,167 @@ constexpr std::string FBXNodePrinter::GetAttributeTypeName(const FbxNodeAttribut
 	case FbxNodeAttribute::eLine: return "line";
 	}
 	return "unknown";
+}
+
+void FBXNodePrinter::TreeNode::DisplayNode(const std::vector<TreeNode>& all, const TreeNode& node) noexcept
+{
+	ImGui::TableNextRow();
+	ImGui::TableNextColumn();
+
+	if(node.child.empty())
+	{
+		static auto flag = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_SpanFullWidth | ImGuiTreeNodeFlags_SpanAvailWidth;
+
+		if(!node.name.empty())
+			ImGui::TreeNodeEx(node.name.c_str(), flag);
+
+		ImGui::TableNextColumn();
+		{
+			ImGui::Unindent(ImGui::GetTreeNodeToLabelSpacing());
+			ImGui::TreeNodeEx(node.data_type.c_str(), flag);
+			ImGui::Indent(ImGui::GetTreeNodeToLabelSpacing());
+		}
+
+		ImGui::TableNextColumn();
+		if (node.data.empty())
+			ImGui::TextDisabled("--");
+		else
+		{
+			ImGui::Unindent(ImGui::GetTreeNodeToLabelSpacing());
+			ImGui::TreeNodeEx(node.data.c_str(), flag);
+			ImGui::Indent(ImGui::GetTreeNodeToLabelSpacing());
+		}
+	}
+	else
+	{
+		bool is_open = false;
+		if (node.name.empty())
+			ImGui::TableNextColumn();
+		else
+			is_open = ImGui::TreeNodeEx(node.name.c_str(), ImGuiTreeNodeFlags_SpanFullWidth | ImGuiTreeNodeFlags_OpenOnDoubleClick);
+
+		ImGui::TableNextColumn();
+		if (node.data_type.empty())
+			ImGui::TextDisabled("--");
+		else
+			ImGui::TextUnformatted(node.data_type.c_str());
+		ImGui::TableNextColumn();
+		if (node.data.empty())
+			ImGui::TextDisabled("--");
+		else
+			ImGui::TextUnformatted(node.data.c_str());
+		if (is_open)
+		{
+			for (const auto& c : node.child)
+				DisplayNode(all, all[c]);
+			ImGui::TreePop();
+		}
+	}
+}
+
+void FBXNodePrinter::SetFileToShowInfo(const std::filesystem::path& path) noexcept
+{
+	s_m_fileStatus.clear();
+	s_m_tree.clear();
+
+	s_m_filePath = path.string();
+	if (std::filesystem::exists(s_m_filePath) == false)
+	{
+		s_m_fileStatus = "[" + s_m_filePath + "] does not exist";
+		return;
+	}
+	if (path.extension() != ".fbx")
+	{
+		s_m_fileStatus = "[" + s_m_filePath + "] is not parseable";
+		return;
+	}
+
+	FbxManager* p_manager = FbxManager::Create();
+	FbxIOSettings* ios = FbxIOSettings::Create(p_manager, IOSROOT);
+	p_manager->SetIOSettings(ios);
+	FbxImporter * importer = FbxImporter::Create(p_manager, "Importer");
+	if (!importer->Initialize(path.string().c_str(), -1, p_manager->GetIOSettings()))
+	{
+		s_m_fileStatus = "[FBX SDK]: Call to FbxImporter::Initialize() failed.\n";
+		s_m_fileStatus += "Error returned" + std::string{ importer->GetStatus().GetErrorString() };
+		importer->Destroy();
+		p_manager->Destroy();
+		return;
+	}
+	const auto p_scene = FbxScene::Create(p_manager, "New Scene");
+	importer->Import(p_scene);
+	const auto& p_root = p_scene->GetRootNode();
+	for (int i = 0; i < p_root->GetChildCount(); ++i)
+	{
+		const int head = SetTreeNode(p_root->GetChild(i));
+		s_m_treeHead.push_back(head);
+	}
+	p_scene->Destroy();
+	importer->Destroy();
+	p_manager->Destroy();
+}
+
+void FBXNodePrinter::UpdateGUI() noexcept
+{
+	ImGui::Begin("FBX FILE NODE STRUCTURE");
+	{
+		if (s_m_filePath.empty())
+			ImGui::Text("Drag and drop file to print fbx nodes!");
+		else if (s_m_tree.empty())
+			ImGui::Text("%s", s_m_fileStatus.c_str());
+		else 
+		{
+			static ImGuiTableFlags flags = ImGuiTableFlags_BordersV | ImGuiTableFlags_BordersOuterH | ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg | ImGuiTableFlags_NoBordersInBody;
+			if(ImGui::BeginTable("Nodes", 3, flags))
+			{
+				const float TEXT_BASE_WIDTH = ImGui::CalcTextSize("A").x;
+
+				ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_NoHide);
+				ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed, TEXT_BASE_WIDTH * 12.0f);
+				ImGui::TableSetupColumn("Data");
+				ImGui::TableHeadersRow();
+
+				for (const auto& i : s_m_treeHead)
+					TreeNode::DisplayNode(s_m_tree, s_m_tree[i]);
+				ImGui::EndTable();
+			}
+		}
+	}
+	ImGui::End();
+}
+
+int FBXNodePrinter::SetTreeNode(const FbxNode* p_node) noexcept
+{
+	const auto index = static_cast<int>(s_m_tree.size());
+	s_m_tree.push_back(TreeNode{p_node->GetName(), "", ""});
+	s_m_tree.push_back(TreeNode{ "", "translation", ParseHelper::ToString(p_node->LclTranslation.Get()) });
+	s_m_tree.push_back(TreeNode{ "", "rotation", ParseHelper::ToString(p_node->LclRotation.Get()) });
+	s_m_tree.push_back(TreeNode{ "", "scaling", ParseHelper::ToString(p_node->LclScaling.Get()) });
+
+	s_m_tree[index].child.push_back(index + 1);
+	s_m_tree[index].child.push_back(index + 2);
+	s_m_tree[index].child.push_back(index + 3);
+
+	if(p_node->GetNodeAttributeCount() > 0)
+	{
+		const auto attrib_index = static_cast<int>(s_m_tree.size());
+		s_m_tree.push_back(TreeNode{"Attribute", "", ""});
+		s_m_tree[index].child.push_back(attrib_index);
+		
+		for (int i = 0; i < p_node->GetNodeAttributeCount(); ++i)
+		{
+			const FbxNodeAttribute* p_attribute = p_node->GetNodeAttributeByIndex(i);
+			s_m_tree.push_back(TreeNode{ p_attribute->GetName(), GetAttributeTypeName(p_attribute->GetAttributeType()), ""});
+			s_m_tree[attrib_index].child.push_back(i + attrib_index + 1);
+		}
+	}
+
+	for (int i = 0; i < p_node->GetChildCount(); ++i)
+	{
+		const int child = SetTreeNode(p_node->GetChild(i));
+		s_m_tree[index].child.push_back(child);
+	}
+	return index;
 }
 
 void FBXNodePrinter::Print(const FbxNode* p_root) noexcept
