@@ -22,7 +22,7 @@ uniform mat4 u_localToModel;
 
 void main()
 {
-    normal = normalize(fNormal.xyz);
+    normal = vec4(normalize(u_modelToWorld * u_localToModel * vNormal)).xyz;
     vec4 pos = u_modelToWorld * u_localToModel * vPosition;
 	position = pos.xyz;
     gl_Position = u_trans.worldToNDC * pos;
