@@ -60,7 +60,7 @@ x86/
 .vscode/
 
 # ImGui file
-.ini
+*.ini
 
 # third_party folder
 #third_party/
