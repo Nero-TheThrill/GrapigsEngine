@@ -58,9 +58,10 @@ public:
 class ResourceManager
 {
 public:
-    ResourceManager() = default;
+    ResourceManager()=default;
     ~ResourceManager();
 
+    void Init() noexcept;
     void Clear() noexcept;
 
     unsigned LoadFbx(const char* fbx_file_path) noexcept;
@@ -86,6 +87,9 @@ private:
     std::vector<std::vector<MeshGroup*>> gmesh_storage;
     std::vector<ShaderProgram*> shader_storage;
     std::string log_string;
+    GLuint fbo,depth;
+    unsigned screen;
+
 public:
     void SetGUIObject(Object* obj) noexcept;
     void UpdateObjectGUI() noexcept;

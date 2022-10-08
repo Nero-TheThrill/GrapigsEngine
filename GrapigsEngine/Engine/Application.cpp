@@ -83,7 +83,6 @@ void Application::Init(int width, int height, const char* title)
 
 
 	// Set callback
-
 	glfwSetFramebufferSizeCallback(window, [](GLFWwindow*, int w, int h)
 		{
 			glViewport(0, 0, w, h);
@@ -96,7 +95,6 @@ void Application::Init(int width, int height, const char* title)
 	glfwSetMouseButtonCallback(window, [](GLFWwindow* p_win, int b, int a, int m) {Input::MouseButtonCallback(p_win, b, a, m); });
 	glfwSetScrollCallback(window, [](GLFWwindow* p_win, double x, double y) {Input::ScrollCallback(p_win, x, y); });
 
-
 	// ImGui Init
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -105,7 +103,7 @@ void Application::Init(int width, int height, const char* title)
 	ImGui_ImplOpenGL3_Init("#version 460");
 
 	CameraBuffer::SetMainCamera(new Camera());
-	CameraBuffer::GetMainCamera()->Set(glm::vec3{ 0, 0, 3 });
+	CameraBuffer::GetMainCamera()->Set(glm::vec3{ 0, 0.5f, 3 });
 	CameraBuffer::GetMainCamera()->Upward(-0.3f);
 }
 

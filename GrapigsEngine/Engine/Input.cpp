@@ -56,6 +56,7 @@ namespace
 	}
 }
 
+
 void Input::KeyboardCallback(void* p_window, int key, int, int action, int mod) noexcept
 {
 	if (GLFW_KEY_ESCAPE == key && GLFW_PRESS == action)
@@ -71,7 +72,7 @@ void Input::KeyboardCallback(void* p_window, int key, int, int action, int mod) 
 		s_m_modifier = Modifier::Alt;
 	else
 		s_m_modifier = Modifier::None;
-
+	
 	if (const int index = static_cast<int>(ToKeyboard(key)); action == GLFW_PRESS)
 	{
 		s_m_keyPress.set(index, true);

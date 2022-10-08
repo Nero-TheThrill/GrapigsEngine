@@ -371,6 +371,7 @@ void FBXNodePrinter::UpdateGUI() noexcept
 	{
 		ImGui::SetWindowSize(ImVec2(400, 1000));
 		ImGui::SetWindowPos(ImVec2(1400, 0));
+
 		if (s_m_filePath.empty())
 			ImGui::Text("Drag and drop file to print fbx nodes!");
 		else if (s_m_tree.empty())

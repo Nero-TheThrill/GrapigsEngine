@@ -143,7 +143,7 @@ void Camera::UpdateMatrix() noexcept
 /* CameraBuffer - start -------------------------------------------------------------------------*/
 
 unsigned CameraBuffer::s_m_handle = 0;
-float CameraBuffer::s_m_aspectRatio = 1800.f / 1000.f;
+float CameraBuffer::s_m_aspectRatio = 1000.f / 1000.f;
 Camera* CameraBuffer::s_m_camera = nullptr;
 
 void CameraBuffer::Clear() noexcept
@@ -167,7 +167,7 @@ void CameraBuffer::SetMainCamera(Camera* p_camera) noexcept
 
 void CameraBuffer::UpdateMainCamera() noexcept
 {
-	const auto& cursor_dir = Input::GetMouseMovingDirection(MouseButton::Right);
+	const auto cursor_dir = Input::GetMouseMovingDirection(MouseButton::Right);
 	if (cursor_dir.x != 0 || cursor_dir.y != 0)
 	{
 		switch (Input::GetModifier())
@@ -187,7 +187,7 @@ void CameraBuffer::UpdateMainCamera() noexcept
 		case Modifier::Control:
 		{
 			const float sign = cursor_dir.y > 0 ? -1.f : 1.f;
-			s_m_camera->Forward(sign * 0.04f);
+			s_m_camera->Forward(sign * 0.02f);
 		}
 		break;
 		case Modifier::Alt: break;

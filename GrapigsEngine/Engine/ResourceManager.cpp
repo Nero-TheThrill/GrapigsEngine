@@ -73,9 +73,35 @@ void Object::SetTexture(unsigned texture_tag)
     }
 }
 
+
+
 ResourceManager::~ResourceManager()
 {
     Clear();
+}
+
+void ResourceManager::Init() noexcept
+{
+    glGenFramebuffers(1, &fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    glGenTextures(1, &screen);
+    glBindTexture(GL_TEXTURE_2D, screen);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1800, 1000, 0, GL_RGB, GL_UNSIGNED_INT, 0);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    glGenRenderbuffers(1, &depth);
+    glBindRenderbuffer(GL_RENDERBUFFER, depth);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, 1800, 1000);
+    glBindRenderbuffer(GL_RENDERBUFFER, 0);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth);
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
+    {
+        std::cout << "FBO is complete" << std::endl;
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void ResourceManager::Clear() noexcept
@@ -234,10 +260,25 @@ void ResourceManager::DrawLines() const noexcept
 
 void ResourceManager::DrawTriangles() const noexcept
 {
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    //////////////////////////////////////////////////////////////////////////////////.
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, screen, 0);
+    GLenum drawBuffers[2] = { GL_COLOR_ATTACHMENT0,GL_DEPTH_ATTACHMENT };
+    glDrawBuffers(2, drawBuffers);
+    glViewport(0, 0, 1800, 1000);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+    {
+        std::cout << "FBO is incomplete" << std::endl;
+    }
     for (const auto& obj : obj_storage)
     {
         obj->Draw(Primitive::Triangles);
     }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+
+
 }
 
 void ResourceManager::SetGUIObject(Object* obj) noexcept
@@ -257,6 +298,14 @@ void ResourceManager::UpdateObjectGUI() noexcept
         ImGui::SetWindowSize(ImVec2(400, 1000));
         ImGui::SetWindowPos(ImVec2(0, 0));
         m_guiObject.DrawGUI();
+    }
+    ImGui::End();
+
+    ImGui::Begin("Screen");
+    {
+        ImGui::SetWindowSize(ImVec2(1000, 1000));
+        ImGui::SetWindowPos(ImVec2(400, 0));
+        ImGui::Image((void*)screen, ImGui::GetWindowSize(), ImVec2(0, 1), ImVec2(1, 0));
     }
     ImGui::End();
 }

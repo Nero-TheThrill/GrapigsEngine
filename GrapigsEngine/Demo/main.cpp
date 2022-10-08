@@ -20,10 +20,11 @@ int main(void)
 	};
 
 	application.Init();
-	Application::SetBackgroundColor(180, 210, 200);
+	Application::SetBackgroundColor(15, 17, 19);
 
+	rscmgr.Init();
 	rscmgr.CreateShader(shader_files);
-	Object* obj = rscmgr.LoadFbxAndCreateObject("model/spider.fbx", 0);
+	Object* obj = rscmgr.LoadFbxAndCreateObject("model/PenguinBaseMesh.fbx", 0);
 	FBXNodePrinter::SetFileToShowInfo("model/PenguinBaseMesh.fbx");
 	rscmgr.SetGUIObject(obj);
 	obj->SetTexture(rscmgr.LoadTexture("texture/Penguin.png"));
@@ -47,7 +48,7 @@ int main(void)
 			for(const auto& p : paths)
 			{
 				std::string cmprstr = p.extension().string();
-				if (cmprstr == ".fbx")
+				if (cmprstr == ".fbx"|| cmprstr == ".FBX")
 				{
 					FBXNodePrinter::SetFileToShowInfo(p);
 					rscmgr.DeleteObject(obj);
@@ -55,7 +56,7 @@ int main(void)
 
 					rscmgr.SetGUIObject(obj);
 				}
-				else if(cmprstr == ".png"|| cmprstr == ".jpg")
+				else if(cmprstr == ".png" || cmprstr == ".jpg" || cmprstr == ".bmp")
 				{
 					obj->SetTexture(rscmgr.LoadTexture(p.string().c_str()));
 				}
