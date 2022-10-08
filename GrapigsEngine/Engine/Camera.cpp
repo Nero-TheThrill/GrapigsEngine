@@ -143,7 +143,7 @@ void Camera::UpdateMatrix() noexcept
 /* CameraBuffer - start -------------------------------------------------------------------------*/
 
 unsigned CameraBuffer::s_m_handle = 0;
-float CameraBuffer::s_m_aspectRatio = 1200.f / 900.f;
+float CameraBuffer::s_m_aspectRatio = 1800.f / 1000.f;
 Camera* CameraBuffer::s_m_camera = nullptr;
 
 void CameraBuffer::Clear() noexcept
@@ -174,8 +174,8 @@ void CameraBuffer::UpdateMainCamera() noexcept
 		{
 		case Modifier::None:
 		{
-			s_m_camera->Yaw(static_cast<float>(-cursor_dir.x) * 0.02f);
-			s_m_camera->Pitch(static_cast<float>(cursor_dir.y) * 0.02f);
+			s_m_camera->Yaw(static_cast<float>(-cursor_dir.x) * 0.05f);
+			s_m_camera->Pitch(static_cast<float>(-cursor_dir.y) * 0.07f);
 		}
 		break;
 		case Modifier::Shift:

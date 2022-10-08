@@ -88,7 +88,8 @@ void MeshGroup::Draw(Primitive primitive, ShaderProgram* program, int index, glm
 		program->SendUniform("o_ambient", mesh.material.ambient);
 		program->SendUniform("o_diffuse", mesh.material.diffuse);
 		program->SendUniform("o_specular", mesh.material.specular);
-
+		glActiveTexture(mesh.material.texture);
+		glBindTextureUnit(0, mesh.material.texture);
 		glNamedBufferSubData(m_vbo, 0, static_cast<GLsizeiptr>(sizeof(Vertex) * vertex.size()), vertex.data());
 		glDrawArrays(static_cast<GLenum>(primitive), 0, static_cast<GLsizei>(vertex.size()));
 	}
@@ -189,12 +190,22 @@ namespace ParseHelper
 						lPolyIndexCounter++;
 					}
 				}
-				texcoords.push_back(tmp[0]);
-				texcoords.push_back(tmp[1]);
-				texcoords.push_back(tmp[2]);
-				texcoords.push_back(tmp[0]);
-				texcoords.push_back(tmp[2]);
-				texcoords.push_back(tmp[3]);
+				if (lPolySize == 4)
+				{
+					texcoords.push_back(tmp[0]);
+					texcoords.push_back(tmp[1]);
+					texcoords.push_back(tmp[2]);
+					texcoords.push_back(tmp[0]);
+					texcoords.push_back(tmp[2]);
+					texcoords.push_back(tmp[3]);
+				}
+				else if(lPolySize == 3)
+				{
+					texcoords.push_back(tmp[0]);
+					texcoords.push_back(tmp[1]);
+					texcoords.push_back(tmp[2]);
+
+				}
 			}
 		}
 		return texcoords;
@@ -358,6 +369,8 @@ void FBXNodePrinter::UpdateGUI() noexcept
 {
 	ImGui::Begin("FBX FILE NODE STRUCTURE");
 	{
+		ImGui::SetWindowSize(ImVec2(400, 1000));
+		ImGui::SetWindowPos(ImVec2(1400, 0));
 		if (s_m_filePath.empty())
 			ImGui::Text("Drag and drop file to print fbx nodes!");
 		else if (s_m_tree.empty())
@@ -677,7 +690,7 @@ std::vector<Vertex> FBXImporter::GetVertices(FbxMesh* p_mesh) noexcept
 	for (int i = 0; i < static_cast<int>(indices.size()); ++i)
 	{
 		const glm::vec4 vertex{ ctrl_pts[indices[i]], 1 };
-		attrib.emplace_back(Vertex{ vertex, vertex_normal[indices[i]], face_normal[i], texture_coordinate[i]});
+		attrib.emplace_back(Vertex{ vertex, vertex_normal[indices[i]], face_normal[i], texture_coordinate.size() <= i ? glm::vec2(0) : texture_coordinate[i] });
 	}
 
 	return attrib;

@@ -43,6 +43,7 @@ public:
 
 	void SendUniform(const std::string& uniform_name, bool value) const noexcept;
 	void SendUniform(const std::string& uniform_name, int value) const noexcept;
+	void SendUniform(const std::string& uniform_name, unsigned value) const noexcept;
 	void SendUniform(const std::string& uniform_name, float value) const noexcept;
 	void SendUniform(const std::string& uniform_name, const glm::vec2& value) const noexcept;
 	void SendUniform(const std::string& uniform_name, const glm::vec3& value) const noexcept;

@@ -57,10 +57,20 @@ void Object::Draw(Primitive primitive) const noexcept
     m_p_shader->Use();
     m_p_shader->SendUniform("u_color", m_color);
     m_p_shader->SendUniform("u_modelToWorld", m_transform.GetTransformMatrix());
-    m_p_shader->SendUniform("u_texture", 0);
     for(const auto& m: m_p_meshGroups)
         m->Draw(primitive, m_p_shader);
     m_p_shader->UnUse();
+}
+
+void Object::SetTexture(unsigned texture_tag)
+{
+    for(auto gmesh : m_p_meshGroups)
+    {
+        for(Mesh& mesh: gmesh->m_meshes)
+        {
+            mesh.material.texture = texture_tag;
+        }
+    }
 }
 
 ResourceManager::~ResourceManager()
@@ -242,8 +252,10 @@ void ResourceManager::SetGUIObject(Object* obj) noexcept
 
 void ResourceManager::UpdateObjectGUI() noexcept
 {
-    ImGui::Begin("OBJECT", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+    ImGui::Begin("OBJECT");
     {
+        ImGui::SetWindowSize(ImVec2(400, 1000));
+        ImGui::SetWindowPos(ImVec2(0, 0));
         m_guiObject.DrawGUI();
     }
     ImGui::End();

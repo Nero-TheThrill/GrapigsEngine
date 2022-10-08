@@ -51,6 +51,7 @@ public:
     glm::vec4 m_color = glm::vec4{1};
 
     void Draw(Primitive primitive) const noexcept;
+    void SetTexture(unsigned texture_tag);
 };
 
 

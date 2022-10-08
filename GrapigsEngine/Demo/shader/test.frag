@@ -43,9 +43,11 @@ layout(std140, binding = 1) uniform LightInformation
 	Light lights[16];
 }lightInfo;
 
+vec3 objcolor = texture(u_texture,texcoord).xyz;
+
 vec3 PointLight(Light light)
 {	
-	I_a = o_ambient * light.ambient;
+	I_a = objcolor * o_ambient * light.ambient;
 
 	vec3 lightVector = normalize(light.position - position);
 
@@ -69,7 +71,7 @@ vec3 PointLight(Light light)
 
 vec3 DirectionalLight(Light light)
 {	
-	I_a = o_ambient * light.ambient;
+	I_a = objcolor * o_ambient * light.ambient;
 
 	vec3 lightVector = normalize(-light.direction);
 
@@ -91,7 +93,7 @@ vec3 DirectionalLight(Light light)
 
 vec3 SpecularLight(Light light)
 {	
-	I_a = o_ambient * light.ambient;
+	I_a = objcolor * o_ambient * light.ambient;
 
 	vec3 lightVector = normalize(light.position - position);
 
@@ -148,7 +150,7 @@ void main()
 		}
 
 	}
-	vec4(finalColor, 1);
-    output_color = texture(u_texture,texcoord);
+	
+    output_color = vec4(finalColor, 1);
 }
 

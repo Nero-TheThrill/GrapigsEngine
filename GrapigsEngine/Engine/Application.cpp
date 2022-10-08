@@ -54,6 +54,8 @@ void Application::Init(int width, int height, const char* title)
 	glfwMakeContextCurrent(window);
 	glfwSwapInterval(1); // Enable v-sync
 
+
+
 	// Init GLEW
 	if (glewInit() == GLEW_OK)
 	{
@@ -79,6 +81,7 @@ void Application::Init(int width, int height, const char* title)
 	}
 	m_p_window = window;
 
+
 	// Set callback
 
 	glfwSetFramebufferSizeCallback(window, [](GLFWwindow*, int w, int h)
@@ -102,7 +105,8 @@ void Application::Init(int width, int height, const char* title)
 	ImGui_ImplOpenGL3_Init("#version 460");
 
 	CameraBuffer::SetMainCamera(new Camera());
-	CameraBuffer::GetMainCamera()->Set(glm::vec3{ 0, 3, 5 });
+	CameraBuffer::GetMainCamera()->Set(glm::vec3{ 0, 0, 3 });
+	CameraBuffer::GetMainCamera()->Upward(-0.3f);
 }
 
 

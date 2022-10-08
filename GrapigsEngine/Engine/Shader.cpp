@@ -151,6 +151,10 @@ void ShaderProgram::SendUniform(const std::string& uniform_name, int value) cons
 {
 	glUniform1i(GetUniformLocation(uniform_name), value);
 }
+void ShaderProgram::SendUniform(const std::string& uniform_name, unsigned value) const noexcept
+{
+	glUniform1i(GetUniformLocation(uniform_name), value);
+}
 
 void ShaderProgram::SendUniform(const std::string& uniform_name, float value) const noexcept
 {

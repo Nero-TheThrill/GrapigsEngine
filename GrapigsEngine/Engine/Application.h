@@ -10,7 +10,7 @@ using byte = unsigned char;
 class Application
 {
 public:
-	void Init(int width = 1200, int height = 900, const char* title = "Grapigs Engine");
+	void Init(int width = 1800, int height = 1000, const char* title = "Grapigs Engine");
 	[[nodiscard]] bool ShouldQuit() const noexcept;
 
 	void BeginUpdate() const noexcept;

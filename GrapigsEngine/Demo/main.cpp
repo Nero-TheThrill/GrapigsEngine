@@ -23,13 +23,10 @@ int main(void)
 	Application::SetBackgroundColor(180, 210, 200);
 
 	rscmgr.CreateShader(shader_files);
-	Object* obj = rscmgr.LoadFbxAndCreateObject("model/PenguinBaseMesh.fbx", 0);
-	rscmgr.LoadTexture("texture/Penguin.png");
-
-
+	Object* obj = rscmgr.LoadFbxAndCreateObject("model/spider.fbx", 0);
 	FBXNodePrinter::SetFileToShowInfo("model/PenguinBaseMesh.fbx");
 	rscmgr.SetGUIObject(obj);
-
+	obj->SetTexture(rscmgr.LoadTexture("texture/Penguin.png"));
 	Lights lights;
 	Light l1,l2;
 	l1.m_transform.Translate(glm::vec3(0, -5, 5));
@@ -49,11 +46,19 @@ int main(void)
 			const auto paths = Input::GetDroppedPaths();
 			for(const auto& p : paths)
 			{
-				FBXNodePrinter::SetFileToShowInfo(p);
-				rscmgr.DeleteObject(obj);
-				obj = rscmgr.LoadFbxAndCreateObject(p.string().c_str(), 0);
-				
-				rscmgr.SetGUIObject(obj);
+				std::string cmprstr = p.extension().string();
+				if (cmprstr == ".fbx")
+				{
+					FBXNodePrinter::SetFileToShowInfo(p);
+					rscmgr.DeleteObject(obj);
+					obj = rscmgr.LoadFbxAndCreateObject(p.string().c_str(), 0);
+
+					rscmgr.SetGUIObject(obj);
+				}
+				else if(cmprstr == ".png"|| cmprstr == ".jpg")
+				{
+					obj->SetTexture(rscmgr.LoadTexture(p.string().c_str()));
+				}
 			}
 		}
 		FBXNodePrinter::UpdateGUI();
