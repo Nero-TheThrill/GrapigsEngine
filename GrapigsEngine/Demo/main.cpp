@@ -24,6 +24,9 @@ int main(void)
 
 	rscmgr.CreateShader(shader_files);
 	Object* obj = rscmgr.LoadFbxAndCreateObject("model/PenguinBaseMesh.fbx", 0);
+	rscmgr.LoadTexture("texture/Penguin.png");
+
+
 	FBXNodePrinter::SetFileToShowInfo("model/PenguinBaseMesh.fbx");
 	rscmgr.SetGUIObject(obj);
 
@@ -47,7 +50,9 @@ int main(void)
 			for(const auto& p : paths)
 			{
 				FBXNodePrinter::SetFileToShowInfo(p);
+				rscmgr.DeleteObject(obj);
 				obj = rscmgr.LoadFbxAndCreateObject(p.string().c_str(), 0);
+				
 				rscmgr.SetGUIObject(obj);
 			}
 		}

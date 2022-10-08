@@ -48,6 +48,11 @@ void MeshGroup::InitBuffers(int largest_index) noexcept
 	glVertexArrayAttribFormat(m_vao, 2, 4, GL_FLOAT, GL_FALSE, offsetof(Vertex, face_normal));
 	glVertexArrayAttribBinding(m_vao, 2, 0);
 
+    // Texture Coordinate
+	glEnableVertexArrayAttrib(m_vao, 3);
+	glVertexArrayAttribFormat(m_vao, 3, 2, GL_FLOAT, GL_FALSE, offsetof(Vertex, texture_coordinate));
+	glVertexArrayAttribBinding(m_vao, 3, 0);
+
 	glBindVertexArray(0);
 }
 
@@ -132,7 +137,68 @@ namespace ParseHelper
 		p_mesh->GetPolygonVertexNormal(poly, vert, normal);
 		return glm::vec3{ normal[0], normal[1],normal[2] };
 	}
+	
+    std::vector<glm::vec2> LoadUVInformation(FbxMesh* pMesh)
+	{
+		std::vector<glm::vec2> texcoords;
+		//get all UV set names
+		FbxStringList lUVSetNameList;
+		pMesh->GetUVSetNames(lUVSetNameList);
 
+		//iterating over all uv sets
+		for (int lUVSetIndex = 0; lUVSetIndex < lUVSetNameList.GetCount(); lUVSetIndex++)
+		{
+			//get lUVSetIndex-th uv set
+			const char* lUVSetName = lUVSetNameList.GetStringAt(lUVSetIndex);
+			const FbxGeometryElementUV* lUVElement = pMesh->GetElementUV(lUVSetName);
+
+			if (!lUVElement)
+				continue;
+
+			// only support mapping mode eByPolygonVertex and eByControlPoint
+			if (lUVElement->GetMappingMode() != FbxGeometryElement::eByPolygonVertex &&
+				lUVElement->GetMappingMode() != FbxGeometryElement::eByControlPoint)
+				return texcoords;
+
+			//index array, where holds the index referenced to the uv data
+			const bool lUseIndex = lUVElement->GetReferenceMode() != FbxGeometryElement::eDirect;
+			const int lIndexCount = (lUseIndex) ? lUVElement->GetIndexArray().GetCount() : 0;
+
+			//iterating through the data by polygon
+			const int lPolyCount = pMesh->GetPolygonCount();
+			int lPolyIndexCounter = 0;
+			for (int lPolyIndex = 0; lPolyIndex < lPolyCount; ++lPolyIndex)
+			{
+				// build the max index array that we need to pass into MakePoly
+				const int lPolySize = pMesh->GetPolygonSize(lPolyIndex);
+				std::vector<glm::vec2> tmp;
+				for (int lVertIndex = 0; lVertIndex < lPolySize; ++lVertIndex)
+				{
+
+					if (lPolyIndexCounter < lIndexCount)
+					{
+						FbxVector2 lUVValue;
+
+						//the UV index depends on the reference mode
+						int lUVIndex = lUseIndex ? lUVElement->GetIndexArray().GetAt(lPolyIndexCounter) : lPolyIndexCounter;
+
+						lUVValue = lUVElement->GetDirectArray().GetAt(lUVIndex);
+						//int key = pMesh->GetPolygonVertex(lPolyIndex, lVertIndex);
+
+						tmp.push_back(glm::vec2(lUVValue[0], lUVValue[1]));
+						lPolyIndexCounter++;
+					}
+				}
+				texcoords.push_back(tmp[0]);
+				texcoords.push_back(tmp[1]);
+				texcoords.push_back(tmp[2]);
+				texcoords.push_back(tmp[0]);
+				texcoords.push_back(tmp[2]);
+				texcoords.push_back(tmp[3]);
+			}
+		}
+		return texcoords;
+	}
 	template <typename T>
 	std::string ToString(const T a_value, const int n = 2)
 	{
@@ -485,48 +551,7 @@ int FBXImporter::ParseNode(FbxNode* p_node, int parent, std::vector<Mesh>& meshe
 	meshes.emplace_back(Mesh());
 	Mesh mesh{};
 	mesh.name = p_node->GetName();
-	// TODO: Need to find applicable fbx file to test this.
-	//int mcount = p_node->GetSrcObjectCount<FbxSurfaceMaterial>();
-	//for (int i = 0; i < mcount; i++)
-	//{
-	//	FbxSurfaceMaterial* material = p_node->GetSrcObject<FbxSurfaceMaterial>(i);
-	//	if (material)
-	//	{
-	//		// This only gets the material of type sDiffuse, you probably need to traverse all Standard Material Property by its name to get all possible textures.
-	//		FbxProperty prop = material->FindProperty(FbxSurfaceMaterial::sDiffuse);
 
-	//		// Check if it's layeredtextures
-	//		int layered_texture_count = prop.GetSrcObjectCount<FbxLayeredTexture>();
-	//		if (layered_texture_count > 0)
-	//		{
-	//			for (int j = 0; j < layered_texture_count; j++)
-	//			{
-	//				FbxLayeredTexture* layered_texture = FbxCast<FbxLayeredTexture>(prop.GetSrcObject<FbxLayeredTexture>(j));
-	//				int lcount = layered_texture->GetSrcObjectCount<FbxTexture>();
-	//				for (int k = 0; k < lcount; k++)
-	//				{
-	//					FbxTexture* texture = FbxCast<FbxTexture>(layered_texture->GetSrcObject<FbxTexture>(k));
-	//					// Then, you can get all the properties of the texture, include its name
-	//					const char* texture_name = texture->GetName();
-	//					texture_name;
-	//				}
-	//			}
-	//		}
-	//		else
-	//		{
-	//			// Directly get textures
-	//			int texture_count = prop.GetSrcObjectCount<FbxTexture>();
-	//			for (int j = 0; j < texture_count; j++)
-	//			{
-	//				const FbxTexture* texture = FbxCast<FbxTexture>(prop.GetSrcObject<FbxTexture>(j));
-	//				// Then, you can get all the properties of the texture, include its name
-	//				const char* texture_name = texture->GetName();
-	//				texture_name;
-	//			}
-	//		}
-	//	}
-
-	//}
 	for (int i = 0; i < p_node->GetNodeAttributeCount(); i++)
 	{
 		if (const FbxNodeAttribute* attribute = p_node->GetNodeAttributeByIndex(i))
@@ -565,14 +590,15 @@ int FBXImporter::ParseNode(FbxNode* p_node, int parent, std::vector<Mesh>& meshe
 	return index;
 }
 
-std::vector<Vertex> FBXImporter::GetVertices(const FbxMesh* p_mesh) noexcept
+std::vector<Vertex> FBXImporter::GetVertices(FbxMesh* p_mesh) noexcept
 {
 	std::vector<glm::vec3> ctrl_pts;
 	std::vector<glm::vec4> face_normal;
 	std::vector<int> indices;
 	std::map<int, glm::vec4> vertex_normal;
-
-	for (int vert = 0; vert < p_mesh->GetControlPointsCount(); ++vert)
+	std::vector<glm::vec2> texture_coordinate=ParseHelper::LoadUVInformation(p_mesh);
+	int cnt= p_mesh->GetControlPointsCount();
+	for (int vert = 0; vert < cnt; ++vert)
 	{
 		const auto& pos = p_mesh->GetControlPointAt(vert);
 		ctrl_pts.emplace_back(glm::vec3{ pos[0], pos[1], pos[2] });
@@ -602,11 +628,16 @@ std::vector<Vertex> FBXImporter::GetVertices(const FbxMesh* p_mesh) noexcept
 			for (int vert = 0; vert < vert_cnt; ++vert)
 			{
 				const int index = p_mesh->GetPolygonVertex(poly, vert);
+
+
+
 				auto find = vertex_normal.find(index);
 				if (find == vertex_normal.end())
 					vertex_normal[index] = glm::vec4{ ParseHelper::GetVertexNormal(p_mesh, poly, vert), 1 };
 				else
 					find->second += glm::vec4{ ParseHelper::GetVertexNormal(p_mesh, poly, vert) , 1 };
+
+
 			}
 
 			// Vertex
@@ -634,17 +665,19 @@ std::vector<Vertex> FBXImporter::GetVertices(const FbxMesh* p_mesh) noexcept
 			}
 		}
 	}
-
+	
 	// Calculate Vertex Normal
 	for (auto& [key, v] : vertex_normal)
 		v = glm::vec4{ v.x / v.w, v.y / v.w, v.z / v.w, 0 };
+
+
 
 	std::vector<Vertex> attrib;
 	attrib.reserve(indices.size());
 	for (int i = 0; i < static_cast<int>(indices.size()); ++i)
 	{
 		const glm::vec4 vertex{ ctrl_pts[indices[i]], 1 };
-		attrib.emplace_back(Vertex{ vertex, vertex_normal[indices[i]], face_normal[i] });
+		attrib.emplace_back(Vertex{ vertex, vertex_normal[indices[i]], face_normal[i], texture_coordinate[i]});
 	}
 
 	return attrib;

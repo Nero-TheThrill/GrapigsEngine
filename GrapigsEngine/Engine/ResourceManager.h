@@ -5,6 +5,7 @@
  *	Desc		: Manage shader, object
  */
 #pragma once
+#include "stb_image.h"
 #include <vector>
 #include <string>
 #include <gl/glew.h>
@@ -64,6 +65,8 @@ public:
     unsigned LoadFbx(const char* fbx_file_path) noexcept;
     Object* LoadFbxAndCreateObject(const char* fbx_file_path, int shader_tag) noexcept;
 
+    unsigned LoadTexture(const char* texture_file_path) noexcept;
+
     [[nodiscard]] std::vector<MeshGroup*> GetMeshByTag(const unsigned& target_tag) const noexcept;
     [[nodiscard]] Object* GetObjectByName(std::string target_name) const noexcept;
     [[nodiscard]] std::vector<Object*> GetObjectByTag(const unsigned& target_tag) const noexcept;
@@ -78,6 +81,7 @@ public:
 
 private:
     std::vector<Object*> obj_storage;
+    std::vector<std::pair<std::string, unsigned>> texture_storage;
     std::vector<std::vector<MeshGroup*>> gmesh_storage;
     std::vector<ShaderProgram*> shader_storage;
     std::string log_string;

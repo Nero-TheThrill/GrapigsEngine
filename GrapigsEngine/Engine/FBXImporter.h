@@ -21,6 +21,7 @@ struct Vertex
 	glm::vec4 position{};
 	glm::vec4 vertex_normal{};
 	glm::vec4 face_normal{};
+    glm::vec2 texture_coordinate{};
 };
 
 struct Material
@@ -66,7 +67,7 @@ private:
     static FbxScene* ImportFbx(FbxManager* p_manager, const char* file_path) noexcept;
 	static std::vector<MeshGroup*> Parse(FbxNode* p_root) noexcept;
 	static int ParseNode(FbxNode* p_node, int parent, std::vector<Mesh>& meshes) noexcept;
-	static std::vector<Vertex> GetVertices(const FbxMesh* p_mesh) noexcept;
+	static std::vector<Vertex> GetVertices( FbxMesh* p_mesh) noexcept;
     static std::size_t s_m_verticesCount;
     static int s_m_meshIndex;
 };

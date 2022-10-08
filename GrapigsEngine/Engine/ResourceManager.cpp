@@ -8,7 +8,8 @@
 
 #include <imgui.h>  // ImGui::
 #include <iostream> // std::cout
-
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 void Lights::Init()
 {
@@ -56,6 +57,7 @@ void Object::Draw(Primitive primitive) const noexcept
     m_p_shader->Use();
     m_p_shader->SendUniform("u_color", m_color);
     m_p_shader->SendUniform("u_modelToWorld", m_transform.GetTransformMatrix());
+    m_p_shader->SendUniform("u_texture", 0);
     for(const auto& m: m_p_meshGroups)
         m->Draw(primitive, m_p_shader);
     m_p_shader->UnUse();
@@ -96,7 +98,54 @@ Object* ResourceManager::LoadFbxAndCreateObject(const char* fbx_file_path, int s
     const std::filesystem::path path{ fbx_file_path };
     return CreateObject(0, path.stem().string(), LoadFbx(fbx_file_path), shader_tag);
 }
- 
+
+unsigned ResourceManager::LoadTexture(const char* texture_file_path) noexcept
+{
+    for(auto texture: texture_storage)
+    {
+        if (texture.first == texture_file_path)
+        {
+            return texture.second;
+        }
+    }
+    int width, height, nrChannels;
+    unsigned char* data;
+    unsigned texture;
+    stbi_set_flip_vertically_on_load(true);
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    // set the texture wrapping parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);	// set texture wrapping to GL_REPEAT (default wrapping method)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    // set texture filtering parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // load image, create texture and generate mipmaps
+
+
+    // The FileSystem::getPath(...) is part of the GitHub repository so we can find files on any IDE/platform; replace it with your own image path.
+
+    data = stbi_load(texture_file_path, &width, &height, &nrChannels, 0);
+
+
+    if (data)
+    {
+        if (nrChannels == 4)
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+        else if (nrChannels == 3)
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else
+    {
+        std::cout << "Failed to load texture" << texture_file_path << std::endl;
+        return 9999;
+    }
+    stbi_image_free(data);
+    texture_storage.push_back(std::pair<std::string, unsigned>(texture_file_path, texture));
+    return texture;
+}
+
 std::vector<MeshGroup*> ResourceManager::GetMeshByTag(const unsigned& target_tag) const noexcept
 {
     if (target_tag < gmesh_storage.size())

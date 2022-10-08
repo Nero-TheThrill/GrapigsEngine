@@ -2,13 +2,14 @@
 
 layout (location=0) in vec3 normal;
 layout (location=1) in vec3 position;
-
+layout (location=2) in vec2 texcoord;
 layout (location=0) out vec4 output_color;
 
 uniform vec4 u_color;
 uniform float o_ambient;
 uniform float o_diffuse;
 uniform float o_specular;
+uniform sampler2D u_texture;
 
 vec3 I_a, I_d, I_s;
 
@@ -147,6 +148,7 @@ void main()
 		}
 
 	}
-    output_color = vec4(finalColor, 1);
+	vec4(finalColor, 1);
+    output_color = texture(u_texture,texcoord);
 }
 

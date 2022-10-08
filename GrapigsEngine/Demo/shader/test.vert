@@ -3,9 +3,11 @@
 layout (location=0) in vec4 vPosition;
 layout (location=1) in vec4 vNormal;
 layout (location=2) in vec4 fNormal;
+layout (location=3) in vec2 vTexCoord;
 
 layout (location=0) out vec3 normal;
 layout (location=1) out vec3 position;
+layout (location=2) out vec2 texcoord;
 
 layout (std140, binding=0) uniform Transform
 {
@@ -25,5 +27,6 @@ void main()
     normal = vec4(normalize(u_modelToWorld * u_localToModel * vNormal)).xyz;
     vec4 pos = u_modelToWorld * u_localToModel * vPosition;
 	position = pos.xyz;
+    texcoord = vTexCoord;
     gl_Position = u_trans.worldToNDC * pos;
 }
