@@ -305,7 +305,7 @@ void ResourceManager::UpdateObjectGUI() noexcept
     {
         ImGui::SetWindowSize(ImVec2(1000, 1000));
         ImGui::SetWindowPos(ImVec2(400, 0));
-        ImGui::Image((void*)screen, ImGui::GetWindowSize(), ImVec2(0, 1), ImVec2(1, 0));
+        ImGui::Image((void*)screen, ImVec2(1000, 965), ImVec2(0, 1), ImVec2(1, 0));
     }
     ImGui::End();
 }

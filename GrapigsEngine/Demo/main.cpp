@@ -37,7 +37,7 @@ int main(void)
 	lights.AddLight(l1);
 	lights.AddLight(l2);
 	lights.Init();
-
+	float f = 0.0f;
 	while(application.ShouldQuit() == false)
 	{
 		application.BeginUpdate();
@@ -64,7 +64,8 @@ int main(void)
 		}
 		FBXNodePrinter::UpdateGUI();
 		rscmgr.UpdateObjectGUI();
-
+		obj->m_transform.Rotate(0, f, 0);
+		f += 0.6f;
 		lights.Update();
 		rscmgr.DrawTriangles();
 
