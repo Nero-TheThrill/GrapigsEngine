@@ -14,6 +14,7 @@ bool Input::s_m_isMouseDown[2] = { false, false };
 Modifier Input::s_m_modifier = Modifier::None;
 glm::ivec2 Input::s_m_cursor = glm::ivec2(0, 0);
 glm::ivec2 Input::s_m_cursorDir = glm::ivec2(0);
+glm::vec3 Input::s_m_ray = glm::vec3(0, 0, 1);
 std::bitset<static_cast<size_t>(Keyboard::Unknown) + 1> Input::s_m_keyPress;
 std::bitset<static_cast<size_t>(Keyboard::Unknown) + 1> Input::s_m_keyRelease;
 std::vector<std::filesystem::path> Input::s_m_droppedPath;
@@ -91,6 +92,9 @@ void Input::CursorPosCallback(void*, double x_pos, double y_pos) noexcept
 	if (s_m_isMouseDown[0] || s_m_isMouseDown[1])
 		s_m_cursorDir = pos - s_m_cursor;
 	s_m_cursor = pos;
+	s_m_ray.x = 2.f * (static_cast<float>(pos.x) / static_cast<float>(s_m_windowSize.x)) - 1.f;
+	s_m_ray.y = 2.f * (static_cast<float>(pos.y) / static_cast<float>(s_m_windowSize.y)) - 1.f;
+	s_m_ray.z = -1;
 }
 
 void Input::MouseButtonCallback(void*, int button, int action, int mod) noexcept
@@ -132,6 +136,11 @@ void Input::DragAndDropCallback(void*, int count, const char** paths) noexcept
 		s_m_droppedPath.push_back(file_path);
 		std::cout << "[Input]: Drag and Drop detected: " << file_path << std::endl;
 	}
+}
+
+const glm::vec3& Input::GetNormalizedMousePos() noexcept
+{
+	return s_m_ray;
 }
 
 glm::ivec2 Input::GetMouseMovingDirection(MouseButton button) noexcept

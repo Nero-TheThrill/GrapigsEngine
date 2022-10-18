@@ -214,4 +214,12 @@ void CameraBuffer::Bind() noexcept
 	glBindBuffer(GL_UNIFORM_BUFFER, s_m_handle);
 }
 
+glm::vec3 CameraBuffer::GetMouseRay() noexcept
+{
+	const glm::mat4& invProj = glm::inverse(s_m_camera->GetCameraToNDCMatrix());
+	const glm::mat4& invView = glm::inverse(s_m_camera->GetWorldToCameraMatrix());
+	const glm::vec3 pos = invView * (invProj * glm::vec4(Input::GetNormalizedMousePos(), 1));	
+	return glm::normalize(pos);
+}
+
 /* CameraBuffer - end ---------------------------------------------------------------------------*/

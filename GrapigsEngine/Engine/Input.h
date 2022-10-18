@@ -39,6 +39,7 @@ public:
 	static void ScrollCallback(void* p_window, double x_offset, double y_offset) noexcept;
 	static void DragAndDropCallback(void* p_window, int count, const char** paths) noexcept;
 
+	static const glm::vec3& GetNormalizedMousePos() noexcept;
 	static glm::ivec2 GetMouseMovingDirection(MouseButton button) noexcept;
 	static Modifier GetModifier() noexcept;
 	static bool IsKeyPressed(Keyboard key) noexcept;
@@ -53,6 +54,7 @@ private:
 	static Modifier s_m_modifier;
 	static glm::ivec2 s_m_cursorDir;
 	static glm::ivec2 s_m_cursor;
+	static glm::vec3 s_m_ray;
 	static std::bitset<static_cast<size_t>(Keyboard::Unknown) + 1> s_m_keyPress;
 	static std::bitset<static_cast<size_t>(Keyboard::Unknown) + 1> s_m_keyRelease;
 	static std::vector<std::filesystem::path> s_m_droppedPath;

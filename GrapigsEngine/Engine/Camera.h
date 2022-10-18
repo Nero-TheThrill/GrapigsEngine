@@ -45,6 +45,7 @@ public:
 	static void UpdateMainCamera() noexcept;
 	static Camera* GetMainCamera() noexcept;
 	static void Bind() noexcept;
+	static glm::vec3 GetMouseRay() noexcept;
 	static float s_m_aspectRatio;
 	static Camera* s_m_camera;
 private:

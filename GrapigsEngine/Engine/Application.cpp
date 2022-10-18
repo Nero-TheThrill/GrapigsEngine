@@ -53,8 +53,7 @@ void Application::Init(int width, int height, const char* title)
 		throw std::runtime_error("GLFW Error: Unable to create the window");
 	glfwMakeContextCurrent(window);
 	glfwSwapInterval(1); // Enable v-sync
-
-
+	Input::s_m_windowSize = glm::ivec2(width, height);
 
 	// Init GLEW
 	if (glewInit() == GLEW_OK)
@@ -86,7 +85,7 @@ void Application::Init(int width, int height, const char* title)
 	glfwSetFramebufferSizeCallback(window, [](GLFWwindow*, int w, int h)
 		{
 			glViewport(0, 0, w, h);
-			const_cast<glm::ivec2&>(Input::s_m_windowSize) = glm::ivec2(w, h);
+			Input::s_m_windowSize = glm::ivec2(w, h);
 			CameraBuffer::s_m_aspectRatio = static_cast<float>(w) / static_cast<float>(h);
 		});
 	glfwSetKeyCallback(window, [](GLFWwindow* p_win, int k, int s, int a, int m) {Input::KeyboardCallback(p_win, k, s, a, m); });
@@ -99,6 +98,16 @@ void Application::Init(int width, int height, const char* title)
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGui::StyleColorsDark();
+	ImGuiIO& io = ImGui::GetIO(); (void)io;
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+	io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable; 
+	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+	{
+		ImGuiStyle& style = ImGui::GetStyle();
+		style.WindowRounding = 0.0f;
+		style.Colors[ImGuiCol_WindowBg].w = 1.0f;
+	}
 	ImGui_ImplGlfw_InitForOpenGL(glfwGetCurrentContext(), true);
 	ImGui_ImplOpenGL3_Init("#version 460");
 
@@ -133,6 +142,14 @@ void Application::EndUpdate() const noexcept
 	// ImGui
 	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+	ImGuiIO& io = ImGui::GetIO();
+	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+	{
+		GLFWwindow* backup_current_context = glfwGetCurrentContext();
+		ImGui::UpdatePlatformWindows();
+		ImGui::RenderPlatformWindowsDefault();
+		glfwMakeContextCurrent(backup_current_context);
+	}
 
 	// Window
 	glfwSwapBuffers(static_cast<GLFWwindow*>(m_p_window));
