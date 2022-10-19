@@ -93,7 +93,7 @@ public:
 	void Bind() const noexcept;
 	void UnBind() const noexcept;
 
-	unsigned GetTexture() const noexcept;
+	[[nodiscard]] unsigned GetTexture() const noexcept;
 private:
 	unsigned m_fboHandle, m_rboHandle, m_texture;
 };

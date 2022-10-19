@@ -29,7 +29,6 @@ struct Material
     float ambient =0.4f;
     float diffuse = 0.3f;
     float specular = 0.2f;
-    unsigned texture = 0;
 };
 struct Mesh
 {
@@ -39,6 +38,7 @@ struct Mesh
     std::vector<int> children;
     Material material;
     int parent = -1;
+    int index = 0;
 };
 
 class MeshGroup

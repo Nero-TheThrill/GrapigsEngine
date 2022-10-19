@@ -59,7 +59,7 @@ Object* CreateObject(ResourceManager* r)
 int main(void)
 {
 	Application application(1000, 800);
-	Application::SetBackgroundColor(15, 17, 19);
+	Application::SetBackgroundColor(255, 255, 255);
 	ResourceManager resource;
 	GUI gui;
 	Lights* lights = CreateLights();

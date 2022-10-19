@@ -505,7 +505,7 @@ MeshGroup* FBXImporter::Load(const char* file_path) noexcept
 	// Print the node of the scene and their attributes recursively
 	// Note that we are not printing the root node because it should not contain any attributes
 	FbxNode* pRoot = p_scene->GetRootNode();
-	FBXNodePrinter::Print(pRoot);
+	//FBXNodePrinter::Print(pRoot);
 
 	auto meshGroup = Parse(pRoot);
 
@@ -546,6 +546,7 @@ MeshGroup* FBXImporter::Parse(FbxNode* p_root) noexcept
 		bool is_mesh_exist = false;
 		group->m_meshes.resize(1);
 		group->m_root = 0;
+		group->m_meshes[0].name = "Root";
 
 		for (int i = 0; i < p_root->GetChildCount(); i++)
 		{
@@ -566,6 +567,10 @@ MeshGroup* FBXImporter::Parse(FbxNode* p_root) noexcept
 			group->InitBuffers(s_m_meshIndex);
 		}
 	}
+
+	for (int i = 0; i < group->m_meshes.size(); ++i)
+		group->m_meshes[i].index = i;
+
 	return group;
 }
 
