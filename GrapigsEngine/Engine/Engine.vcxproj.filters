@@ -39,6 +39,9 @@
     <ClInclude Include="Shader.h">
       <Filter>Windows\ResourceManager\Shader</Filter>
     </ClInclude>
+    <ClInclude Include="GUI.h">
+      <Filter>Windows\Application</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ResourceManager.cpp">
@@ -61,6 +64,9 @@
     </ClCompile>
     <ClCompile Include="Shader.cpp">
       <Filter>Windows\ResourceManager\Shader</Filter>
+    </ClCompile>
+    <ClCompile Include="GUI.cpp">
+      <Filter>Windows\Application</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

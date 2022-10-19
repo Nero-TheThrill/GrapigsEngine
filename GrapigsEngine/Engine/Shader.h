@@ -53,6 +53,7 @@ public:
 	void PrintActiveAttributes() const noexcept;
 	void PrintActiveUniforms() const noexcept;
 
+	std::string m_name = "nan";
 	const unsigned m_tag = 0;
 private:
 	void Clear() noexcept;
@@ -63,4 +64,36 @@ private:
 	unsigned m_handle = 0;
 	std::vector<Shader*> m_shader;
 	mutable std::map<std::string, int> uniforms;
+};
+
+class Texture
+{
+	static unsigned s_textureCount;
+public:
+	Texture(const char* file_path) noexcept;
+	~Texture() noexcept;
+
+	[[nodiscard]] unsigned Unit() const noexcept;
+
+	const bool m_initialized;
+	const unsigned m_tag = 0;
+private:
+	const std::filesystem::path m_filePath;
+	unsigned m_handle = 0;
+	unsigned m_unit = 0;
+};
+
+class FrameBufferObject
+{
+public:
+	FrameBufferObject();
+
+	void Init(int width, int height) noexcept;
+	void Clear() noexcept;
+	void Bind() const noexcept;
+	void UnBind() const noexcept;
+
+	unsigned GetTexture() const noexcept;
+private:
+	unsigned m_fboHandle, m_rboHandle, m_texture;
 };

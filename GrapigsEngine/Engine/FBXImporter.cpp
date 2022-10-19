@@ -88,8 +88,6 @@ void MeshGroup::Draw(Primitive primitive, ShaderProgram* program, int index, glm
 		program->SendUniform("o_ambient", mesh.material.ambient);
 		program->SendUniform("o_diffuse", mesh.material.diffuse);
 		program->SendUniform("o_specular", mesh.material.specular);
-		glActiveTexture(mesh.material.texture);
-		glBindTextureUnit(0, mesh.material.texture);
 		glNamedBufferSubData(m_vbo, 0, static_cast<GLsizeiptr>(sizeof(Vertex) * vertex.size()), vertex.data());
 		glDrawArrays(static_cast<GLenum>(primitive), 0, static_cast<GLsizei>(vertex.size()));
 	}
@@ -481,18 +479,18 @@ void FBXNodePrinter::PrintTabs() noexcept
 std::size_t FBXImporter::s_m_verticesCount = 0;
 int FBXImporter::s_m_meshIndex = -1;
 
-std::vector<MeshGroup*> FBXImporter::Load(const char* file_path) noexcept
+MeshGroup* FBXImporter::Load(const char* file_path) noexcept
 {
 	const std::filesystem::path path(file_path);
 	if (std::filesystem::exists(file_path) == false)
 	{
 		std::cout << "[FBXImporter]: " << file_path << " does not exist." << std::endl;
-		return std::vector<MeshGroup*>{};
+		return nullptr;
 	}
 	if (path.extension() != ".fbx")
 	{
 		std::cout << "[FBXImporter]: Unable to parse " << file_path << std::endl;
-		return std::vector<MeshGroup*>{};
+		return nullptr;
 	}
 
 	// Initialize the SDK manager
@@ -509,12 +507,12 @@ std::vector<MeshGroup*> FBXImporter::Load(const char* file_path) noexcept
 	FbxNode* pRoot = p_scene->GetRootNode();
 	FBXNodePrinter::Print(pRoot);
 
-	auto mesh_groups = Parse(pRoot);
+	auto meshGroup = Parse(pRoot);
 
 	// Destroy the SDK manager and all the other objects is was handling
 	p_manager->Destroy();
 
-	return mesh_groups;
+	return meshGroup;
 }
 
 FbxScene* FBXImporter::ImportFbx(FbxManager* p_manager, const char* file_path) noexcept
@@ -536,24 +534,39 @@ FbxScene* FBXImporter::ImportFbx(FbxManager* p_manager, const char* file_path) n
 	return scene;
 }
 
-std::vector<MeshGroup*> FBXImporter::Parse(FbxNode* p_root) noexcept
+MeshGroup* FBXImporter::Parse(FbxNode* p_root) noexcept
 {
-	std::vector<MeshGroup*> mesh_groups;
+	MeshGroup* group = nullptr;
+	s_m_meshIndex = -1;
+	s_m_verticesCount = 0;
+
 	if (p_root)
 	{
+		group = new MeshGroup();
+		bool is_mesh_exist = false;
+		group->m_meshes.resize(1);
+		group->m_root = 0;
+
 		for (int i = 0; i < p_root->GetChildCount(); i++)
 		{
-			s_m_meshIndex = -1;
-			s_m_verticesCount = 0;
+			is_mesh_exist = true;
+			const int top = ParseNode(p_root->GetChild(i), -1, group->m_meshes);
+			group->m_meshes[0].children.push_back(top);
+			group->m_meshes[top].parent = 0;
+		}
 
-			MeshGroup* mesh_group = new MeshGroup();
-			mesh_group->m_root = ParseNode(p_root->GetChild(i), -1, mesh_group->m_meshes);
-			mesh_group->m_name = p_root->GetName();
-			mesh_group->InitBuffers(s_m_meshIndex);
-			mesh_groups.push_back(mesh_group);
+		if(is_mesh_exist == false)
+		{
+			delete group;
+			group = nullptr;
+		}
+		else
+		{
+			group->m_name = p_root->GetName();
+			group->InitBuffers(s_m_meshIndex);
 		}
 	}
-	return mesh_groups;
+	return group;
 }
 
 int FBXImporter::ParseNode(FbxNode* p_node, int parent, std::vector<Mesh>& meshes) noexcept

@@ -10,6 +10,9 @@
 #include <fstream>	// std::ifstream
 #include <gl/glew.h>	// gl functions
 
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>	// load png
+
 namespace
 {
 	constexpr GLenum ToGLenum(const ShaderType type)
@@ -201,7 +204,7 @@ int ShaderProgram::GetUniformLocation(const std::string& uniform_name) const noe
 	int location = glGetUniformLocation(m_handle, uniform_name.c_str());
 	if (location < 0)
 	{
-		std::cout << "[ShaderProgram]: <tag=" << m_tag << "> There isn't uniform variable <" << uniform_name << ">" << std::endl;
+		std::cout << "[ShaderProgram]: <name=" << m_name << "> There isn't uniform variable <" << uniform_name << ">" << std::endl;
 		location = -1;
 	}
 	uniforms[uniform_name] = location;
@@ -218,7 +221,7 @@ void ShaderProgram::LinkAndValidate() noexcept
 		m_handle = glCreateProgram();
 		if (m_handle == 0)
 		{
-			std::cout << "[ShaderProgram]: <tag=" << m_tag << "> Unable to create shader program" << std::endl;
+			std::cout << "[ShaderProgram]: <name=" << m_name << "> Unable to create shader program" << std::endl;
 			return;
 		}
 	}
@@ -227,7 +230,7 @@ void ShaderProgram::LinkAndValidate() noexcept
 	{
 		if (shader->IsCompiled() == false)
 		{
-			std::cout << "[ShaderProgram]: <tag=" << m_tag << "> shader isn't compiled" << std::endl;
+			std::cout << "[ShaderProgram]: <name=" << m_name << "> shader isn't compiled" << std::endl;
 			return;
 		}
  		glAttachShader(m_handle, shader->GetHandle());
@@ -244,7 +247,7 @@ void ShaderProgram::LinkAndValidate() noexcept
 		std::vector<char> error_log(log_length);
 		glGetProgramInfoLog(m_handle, log_length, nullptr, error_log.data());
 		Clear();
-		std::cout << "[ShaderProgram]: <tag=" << m_tag << "> Link Failure\n" + std::string(error_log.begin(), error_log.end()) << std::endl;
+		std::cout << "[ShaderProgram]: <name=" << m_name << "> Link Failure\n" + std::string(error_log.begin(), error_log.end()) << std::endl;
 		return;
 	}
 	// Check validate
@@ -258,7 +261,7 @@ void ShaderProgram::LinkAndValidate() noexcept
 		std::vector<char> error_log(log_length);
 		glGetProgramInfoLog(m_handle, log_length, nullptr, error_log.data());
 		Clear();
-		std::cout << "[ShaderProgram]: <tag=" << m_tag << "> Validate Failure\n" + std::string(error_log.begin(), error_log.end()) << std::endl;
+		std::cout << "[ShaderProgram]: <name=" << m_name << "> Validate Failure\n" + std::string(error_log.begin(), error_log.end()) << std::endl;
 		return;
 	}
 	m_isLinked = true;
@@ -305,3 +308,115 @@ void ShaderProgram::PrintActiveUniforms() const noexcept
 	}
 	std::cout << std::endl;
 }
+
+/* ShaderProgram - end --------------------------------------------------------------------------*/
+/*-----------------------------------------------------------------------------------------------*/
+/* Texture - start ------------------------------------------------------------------------------*/
+
+unsigned Texture::s_textureCount = 1;
+
+Texture::Texture(const char* file_path) noexcept
+	: m_initialized(false), m_filePath(file_path)
+{
+	stbi_set_flip_vertically_on_load(true);
+	int width, height, channels;
+	unsigned char* data = stbi_load(m_filePath.string().c_str(), &width, &height, &channels, 0);
+	if (data == nullptr)
+	{
+		std::cout << "[Texture] Error: Unable to load " << m_filePath << std::endl;
+		return;
+	}
+
+	const GLenum sized_internal_format = (channels == 4) ? GL_RGBA8 : GL_RGB8;
+	const GLenum base_internal_format = (channels == 4) ? GL_RGBA : GL_RGB;
+
+	if (!m_handle)
+		glCreateTextures(GL_TEXTURE_2D, 1, &m_handle);
+	glTextureStorage2D(m_handle, 1, sized_internal_format, width, height);
+	glTextureSubImage2D(m_handle, 0, 0, 0, width, height, base_internal_format, GL_UNSIGNED_BYTE, data);
+	stbi_image_free(data);
+
+	glTextureParameteri(m_handle, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTextureParameteri(m_handle, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTextureParameteri(m_handle, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTextureParameteri(m_handle, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+	m_unit = s_textureCount++;
+	glBindTextureUnit(m_unit, m_handle);
+	const_cast<bool&>(m_initialized) = true;
+}
+
+Texture::~Texture() noexcept
+{
+	glDeleteTextures(1, &m_handle);
+	m_handle = 0;
+	m_unit = 0;
+}
+
+unsigned Texture::Unit() const noexcept
+{
+	return m_unit;
+}
+
+
+FrameBufferObject::FrameBufferObject() 
+	: m_fboHandle(0), m_rboHandle(0), m_texture(0)
+{
+}
+void FrameBufferObject::Init(int width, int height) noexcept
+{
+	if (!m_fboHandle)
+		glCreateFramebuffers(1, &m_fboHandle);
+	glBindFramebuffer(GL_FRAMEBUFFER, m_fboHandle);
+
+	if (!m_texture)
+		glCreateTextures(GL_TEXTURE_2D, 1, &m_texture);
+	glBindTexture(GL_TEXTURE_2D, m_texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_INT, 0);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	if (!m_rboHandle)
+		glGenRenderbuffers(1, &m_rboHandle);
+	glBindRenderbuffer(GL_RENDERBUFFER, m_rboHandle);
+
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_rboHandle);
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	{
+		std::cout << "[Frame Buffer Object]: Frame Buffer isn't complete" << std::endl;
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void FrameBufferObject::Clear() noexcept
+{
+	glDeleteTextures(1, &m_texture);
+	glDeleteFramebuffers(1, &m_fboHandle);
+	glDeleteRenderbuffers(1, &m_rboHandle);
+	m_texture = m_fboHandle = m_rboHandle = 0;
+}
+
+void FrameBufferObject::Bind() const noexcept
+{
+	static constexpr GLenum buffers[2] = { GL_COLOR_ATTACHMENT0,GL_DEPTH_ATTACHMENT };
+	glBindFramebuffer(GL_FRAMEBUFFER, m_fboHandle);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_texture, 0);
+	glDrawBuffers(2, buffers);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+void FrameBufferObject::UnBind() const noexcept
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+unsigned FrameBufferObject::GetTexture() const noexcept
+{
+	return m_texture;
+}
+
+/* Texture - end --------------------------------------------------------------------------------*/

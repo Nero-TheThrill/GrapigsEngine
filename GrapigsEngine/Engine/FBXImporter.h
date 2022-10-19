@@ -1,10 +1,10 @@
-#pragma once
 /*
  *	Author		: Jina Hyun
  *	Date		: 09/29/22
  *	File Name	: FBXImporter.h
  *	Desc		: Import fbx
  */
+#pragma once
 #include <fbxsdk.h>	// Fbx variables and functions
 #include <vector>	// std::vector
 #include <glm/glm.hpp>	// glm
@@ -62,10 +62,10 @@ private:
 class FBXImporter
 {
 public:
-	static std::vector<MeshGroup*> Load(const char* file_path) noexcept;
+	static MeshGroup* Load(const char* file_path) noexcept;
 private:
     static FbxScene* ImportFbx(FbxManager* p_manager, const char* file_path) noexcept;
-	static std::vector<MeshGroup*> Parse(FbxNode* p_root) noexcept;
+	static MeshGroup* Parse(FbxNode* p_root) noexcept;
 	static int ParseNode(FbxNode* p_node, int parent, std::vector<Mesh>& meshes) noexcept;
 	static std::vector<Vertex> GetVertices( FbxMesh* p_mesh) noexcept;
     static std::size_t s_m_verticesCount;

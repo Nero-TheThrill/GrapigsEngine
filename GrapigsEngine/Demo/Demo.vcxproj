@@ -70,7 +70,9 @@
     </Link>
     <PostBuildEvent>
       <Command>xcopy $(ProjectDir)model $(TargetDir)model /I /R /C /Y
-xcopy $(ProjectDir)shader $(TargetDir)shader /I /R /C /Y</Command>
+xcopy $(ProjectDir)shader $(TargetDir)shader /I /R /C /Y
+xcopy /y /d "$(SolutionDir)third_party\bin\$(Configuration)\*.dll" "$(TargetDir)"
+</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -93,7 +95,9 @@ xcopy $(ProjectDir)shader $(TargetDir)shader /I /R /C /Y</Command>
     </Link>
     <PostBuildEvent>
       <Command>xcopy $(ProjectDir)model $(TargetDir)model /I /R /C /Y
-xcopy $(ProjectDir)shader $(TargetDir)shader /I /R /C /Y</Command>
+xcopy $(ProjectDir)shader $(TargetDir)shader /I /R /C /Y
+xcopy /y /d "$(SolutionDir)third_party\bin\$(Configuration)\*.dll" "$(TargetDir)"
+</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

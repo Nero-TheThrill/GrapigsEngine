@@ -6,10 +6,9 @@
  */
 #include "ResourceManager.h"
 
-#include <imgui.h>  // ImGui::
-#include <iostream> // std::cout
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+#include "Input.h"
+
+ /* Light - start --------------------------------------------------------------------------------*/
 
 void Lights::Init()
 {
@@ -52,300 +51,134 @@ void Lights::AddLight(Light light)
     lights.push_back(light);
 }
 
+
+/* Light - end ----------------------------------------------------------------------------------*/
+/*-----------------------------------------------------------------------------------------------*/
+/* Object - start -------------------------------------------------------------------------------*/
+
 void Object::Draw(Primitive primitive) const noexcept
 {
     m_p_shader->Use();
     m_p_shader->SendUniform("u_color", m_color);
     m_p_shader->SendUniform("u_modelToWorld", m_transform.GetTransformMatrix());
-    for(const auto& m: m_p_meshGroups)
-        m->Draw(primitive, m_p_shader);
+    if (m_p_texture)
+        m_p_shader->SendUniform("u_texture", m_p_texture->Unit());
+    m_p_mesh->Draw(primitive, m_p_shader);
     m_p_shader->UnUse();
 }
 
-void Object::SetTexture(unsigned texture_tag)
+/* Object - end ---------------------------------------------------------------------------------*/
+/*-----------------------------------------------------------------------------------------------*/
+/* ResourceManager - start ----------------------------------------------------------------------*/
+
+FrameBufferObject* ResourceManager::m_fbo = new FrameBufferObject();
+
+ResourceManager::ResourceManager() :
+	m_object(nullptr)
 {
-    for(auto gmesh : m_p_meshGroups)
-    {
-        for(Mesh& mesh: gmesh->m_meshes)
-        {
-            mesh.material.texture = texture_tag;
-        }
-    }
+    const glm::ivec2& size = Input::s_m_windowSize;
+    m_fbo->Init(size.x, size.y);
 }
-
-
 
 ResourceManager::~ResourceManager()
 {
     Clear();
 }
 
-void ResourceManager::Init() noexcept
-{
-    glGenFramebuffers(1, &fbo);
-    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-    glGenTextures(1, &screen);
-    glBindTexture(GL_TEXTURE_2D, screen);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1800, 1000, 0, GL_RGB, GL_UNSIGNED_INT, 0);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    glGenRenderbuffers(1, &depth);
-    glBindRenderbuffer(GL_RENDERBUFFER, depth);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, 1800, 1000);
-    glBindRenderbuffer(GL_RENDERBUFFER, 0);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth);
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
-    {
-        std::cout << "FBO is complete" << std::endl;
-    }
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-}
-
 void ResourceManager::Clear() noexcept
 {
-    for (auto& group : gmesh_storage)
-    {
-        for (const auto& m : group)
-            delete m;
-        group.clear();
-    }
-    gmesh_storage.clear();
-    for (const auto& s : shader_storage)
-        delete s;
-    shader_storage.clear();
-    for (const auto& o : obj_storage)
-        delete o;
-    obj_storage.clear();
+    for (auto& m : m_meshes)
+        delete m.second;
+    m_meshes.clear();
+    for (auto& s : m_shaders)
+        delete s.second;
+    m_shaders.clear();
+    for (auto& t : m_textures)
+        delete t.second;
+    m_textures.clear();
+    delete m_object;
+    m_object = nullptr;
+    m_fbo->Clear();
 }
 
-unsigned ResourceManager::LoadFbx(const char* fbx_file_path) noexcept
+unsigned ResourceManager::LoadFbx(const char* path) noexcept
 {
-    const auto& meshes = FBXImporter::Load(fbx_file_path);
-    const auto tag = static_cast<unsigned>(gmesh_storage.size());
-    gmesh_storage.push_back(meshes);
+    const auto& mesh = FBXImporter::Load(path);
+    if(mesh != nullptr)
+    {
+	    const auto tag = static_cast<unsigned>(m_meshes.size());
+        const_cast<unsigned&>(mesh->m_tag) = tag;
+        m_meshes[tag] = mesh;
+		return tag;
+    }
+    return ERROR_INDEX;
+}
+
+unsigned ResourceManager::LoadTexture(const char* path) noexcept
+{
+    auto* texture = new Texture(path);
+    if(texture->m_initialized)
+    {
+        const auto tag = static_cast<unsigned>(m_textures.size());
+        const_cast<unsigned&>(texture->m_tag) = tag;
+        m_textures[tag] = texture;
+        return tag;
+    }
+    delete texture;
+    return ERROR_INDEX;
+}
+
+unsigned ResourceManager::LoadShaders(const std::vector<std::pair<ShaderType, std::filesystem::path>>& paths) noexcept
+{
+    auto* program = new ShaderProgram(paths);
+    const auto& tag = static_cast<unsigned>(m_shaders.size());
+    const_cast<unsigned&>(program->m_tag) = tag;
+    m_shaders[tag] = program;
     return tag;
 }
 
-Object* ResourceManager::LoadFbxAndCreateObject(const char* fbx_file_path, int shader_tag) noexcept
+Object* ResourceManager::CreateObject(unsigned mesh, unsigned shader, unsigned texture) noexcept
 {
-    const std::filesystem::path path{ fbx_file_path };
-    return CreateObject(0, path.stem().string(), LoadFbx(fbx_file_path), shader_tag);
+    if (m_object != nullptr)
+        delete m_object;
+
+    m_object = new Object();
+    if(m_meshes.contains(mesh))
+	    m_object->m_p_mesh = m_meshes[mesh];
+    if(m_shaders.contains(shader))
+	    m_object->m_p_shader = m_shaders[shader];
+    if(texture != ERROR_INDEX && m_textures.contains(texture))
+	    m_object->m_p_texture = m_textures[texture];
+    return  m_object;
 }
 
-unsigned ResourceManager::LoadTexture(const char* texture_file_path) noexcept
+Object* ResourceManager::CreateObject(const char* path) noexcept
 {
-    for(auto texture: texture_storage)
+    auto tag = LoadFbx(path);
+    if(tag != ERROR_INDEX)
     {
-        if (texture.first == texture_file_path)
-        {
-            return texture.second;
-        }
+        auto shader = m_object->m_p_shader->m_tag;
+        CreateObject(tag, shader, ERROR_INDEX);
     }
-    int width, height, nrChannels;
-    unsigned char* data;
-    unsigned texture;
-    stbi_set_flip_vertically_on_load(true);
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    // set the texture wrapping parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);	// set texture wrapping to GL_REPEAT (default wrapping method)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    // set texture filtering parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    // load image, create texture and generate mipmaps
-
-
-    // The FileSystem::getPath(...) is part of the GitHub repository so we can find files on any IDE/platform; replace it with your own image path.
-
-    data = stbi_load(texture_file_path, &width, &height, &nrChannels, 0);
-
-
-    if (data)
-    {
-        if (nrChannels == 4)
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-        else if (nrChannels == 3)
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-    }
-    else
-    {
-        std::cout << "Failed to load texture" << texture_file_path << std::endl;
-        return 9999;
-    }
-    stbi_image_free(data);
-    texture_storage.push_back(std::pair<std::string, unsigned>(texture_file_path, texture));
-    return texture;
+    return m_object;
 }
 
-std::vector<MeshGroup*> ResourceManager::GetMeshByTag(const unsigned& target_tag) const noexcept
+void ResourceManager::SetTextureToMainObject(unsigned texture_tag) noexcept
 {
-    if (target_tag < gmesh_storage.size())
-        return gmesh_storage[target_tag];
-    std::cout << "Mesh Not Found. Tag : " << target_tag << std::endl;
-    return std::vector<MeshGroup*>{};
-}
-
-Object* ResourceManager::GetObjectByName(std::string target_name) const noexcept
-{
-    for (const auto& obj : obj_storage)
-    {
-        if (obj->m_name == target_name)
-            return obj;
-    }
-    std::cout << "Object Not Found. Name : " << target_name << std::endl;
-    return nullptr;
-}
-
-std::vector<Object*> ResourceManager::GetObjectByTag(const unsigned& target_tag) const noexcept
-{
-    std::vector<Object*> result;
-    for (const auto& obj : obj_storage)
-    {
-        if (obj->m_tag == target_tag)
-            result.push_back(obj);
-    }
-    if(result.empty())
-        std::cout << "Object Not Found. Tag : " << target_tag << std::endl;
-    return result;
-}
-
-ShaderProgram* ResourceManager::GetShaderByTag(unsigned tag) const noexcept
-{
-    return tag < shader_storage.size() ? shader_storage[tag] : nullptr;
-}
-
-ShaderProgram* ResourceManager::CreateShader(const std::vector<std::pair<ShaderType, std::filesystem::path>>& shader_files) noexcept
-{
-    ShaderProgram* program = new ShaderProgram(shader_files);
-    const_cast<unsigned&>(program->m_tag) = static_cast<unsigned>(shader_storage.size());
-    shader_storage.push_back(program);
-    return program;
-}
-
-Object* ResourceManager::CreateObject(unsigned tag, const std::string& name, unsigned mesh_tag, unsigned shader_tag) noexcept
-{
-    Object* new_obj = new Object();
-
-    new_obj->m_p_meshGroups = GetMeshByTag(mesh_tag);
-    new_obj->m_p_shader = GetShaderByTag(shader_tag);
-    const_cast<unsigned&>(new_obj->m_tag) = tag;
-    new_obj->m_name = name;
-
-    obj_storage.push_back(new_obj);
-    return new_obj;
-}
-
-void ResourceManager::DeleteObject(Object* obj)
-{
-    if (auto target_obj = std::find(obj_storage.begin(), obj_storage.end(), obj);
-        target_obj != obj_storage.end())
-    {
-        std::cout << "Object <name=" << (*target_obj)->m_name << " tag = " << (*target_obj)->m_tag << " > has been delete" << std::endl;
-        obj_storage.erase(target_obj);
-    }
+    if (texture_tag != ERROR_INDEX && m_textures.contains(texture_tag))
+        m_object->m_p_texture = m_textures[texture_tag];
 }
 
 void ResourceManager::DrawLines() const noexcept
 {
-    for (const auto& obj : obj_storage)
-    {
-        obj->Draw(Primitive::LineLoop);
-    }
+    m_object->Draw(Primitive::LineLoop);
 }
 
 void ResourceManager::DrawTriangles() const noexcept
 {
-    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-    //////////////////////////////////////////////////////////////////////////////////.
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, screen, 0);
-    GLenum drawBuffers[2] = { GL_COLOR_ATTACHMENT0,GL_DEPTH_ATTACHMENT };
-    glDrawBuffers(2, drawBuffers);
-    glViewport(0, 0, 1800, 1000);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-    {
-        std::cout << "FBO is incomplete" << std::endl;
-    }
-    for (const auto& obj : obj_storage)
-    {
-        obj->Draw(Primitive::Triangles);
-    }
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-
-
+    m_fbo->Bind();
+    m_object->Draw(Primitive::Triangles);
+    m_fbo->UnBind();
 }
 
-void ResourceManager::SetGUIObject(Object* obj) noexcept
-{
-    m_guiObject.object = obj;
-    m_guiObject.position = obj->m_transform.GetPosition();
-    m_guiObject.rotation = obj->m_transform.GetRotation();
-    m_guiObject.scaling = obj->m_transform.GetScaling();
-    m_guiObject.scale = 1;
-    m_guiObject.prevScale = 1;
-}
-
-void ResourceManager::UpdateObjectGUI() noexcept
-{
-    ImGui::Begin("OBJECT");
-    {
-        m_guiObject.DrawGUI();
-    }
-    ImGui::End();
-
-    ImGui::Begin("Screen");
-    {
-        ImGui::Image((void*)screen, ImGui::GetWindowSize(), ImVec2(0, 1), ImVec2(1, 0));
-    }
-    ImGui::End();
-}
-
-void ResourceManager::GUIObject::DrawGUI() noexcept
-{
-    ImGui::TextColored(ImVec4{ 1, 1, 0, 1 }, object->m_name.c_str());
-    if (ImGui::DragFloat3("Translation", &position[0], 0.01f, 0, 0, "%.2f"))
-        object->m_transform.Translate(position);
-    if (ImGui::DragFloat3("Rotation", &rotation[0], 1, 0, 0, "%.1f"))
-    {
-        if (rotation.x > 360)
-            rotation.x = 0;
-        else if (rotation.x < 0)
-            rotation.x = 360;
-        if (rotation.y > 360)
-            rotation.y = 0;
-        else if (rotation.y < 0)
-            rotation.y = 360;
-        if (rotation.z > 360)
-            rotation.z = 0;
-        else if (rotation.z < 0)
-            rotation.z = 360;
-        object->m_transform.Rotate(rotation.x, rotation.y, rotation.z);
-    }
-    if (ImGui::DragFloat3("Scaling", &scaling[0], 0.01f, 0, 0, "%.2f"))
-    {
-        if (scaling.x < std::numeric_limits<float>::epsilon())
-            scaling.x = 0.001f;
-        if (scaling.y < std::numeric_limits<float>::epsilon())
-            scaling.y = 0.001f;
-        if (scaling.z < std::numeric_limits<float>::epsilon())
-            scaling.z = 0.001f;
-        object->m_transform.Scale(scaling);
-        scale = 1;
-        prevScale = 1;
-    }
-    if(ImGui::DragFloat("Scale by", &scale, 0.01f, 0, 0, "%.2f"))
-    {
-        if (scale < std::numeric_limits<float>::epsilon())
-            scale = 0.001f;
-        
-        scaling *= (scale / prevScale);
-        object->m_transform.Scale(scaling * scale);
-        prevScale = scale;
-    }
-}
+/* ResourceManager - end ------------------------------------------------------------------------*/

@@ -29,7 +29,7 @@ namespace Callback
 	void OpenGLDebug(unsigned source, unsigned type, unsigned id, unsigned severity, int length, const char* message, const void* user_param);
 }
 
-void Application::Init(int width, int height, const char* title)
+Application::Application(int width, int height, const char* title)
 {
 	if (width <= 0 || height <= 0)
 		throw std::runtime_error("[Application] Error: Window size should be greater than 0");

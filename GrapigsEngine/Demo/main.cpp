@@ -8,66 +8,76 @@
 #include "Application.h"
 #include "Input.h"
 #include "ResourceManager.h"
+#include "GUI.h"
 
-int main(void)
+Lights *CreateLights()
 {
-	Application application;
-	ResourceManager rscmgr;
+	Lights* lights = new Lights();
+	Light l1, l2;
+	l1.m_transform.Translate(glm::vec3(0, -5, 5));
+	l1.m_type = LightType::DIRECTIONAL;
+	l2.m_transform.Translate(glm::vec3(0, -5, 5));
+	l2.m_type = LightType::POINT;
+	lights->AddLight(l1);
+	lights->AddLight(l2);
+	lights->Init();
+	return lights;
+}
 
+void DragAndDrop(ResourceManager* r, GUI* g, Object* o)
+{
+	const auto paths = Input::GetDroppedPaths();
+	for (const auto& p : paths)
+	{
+		std::string cmprstr = p.extension().string();
+		if (cmprstr == ".fbx" || cmprstr == ".FBX")
+		{
+			o = r->CreateObject(p.string().c_str());
+			g->SetObject(o);
+		}
+		else if (cmprstr == ".png" || cmprstr == ".jpg" || cmprstr == ".bmp")
+		{
+			auto tex = r->LoadTexture(p.string().c_str());
+			r->SetTextureToMainObject(tex);
+		}
+	}
+}
+
+Object* CreateObject(ResourceManager* r)
+{
 	const std::vector<std::pair<ShaderType, std::filesystem::path>> shader_files = {
 			std::make_pair(ShaderType::Vertex, "shader/test.vert"),
 			std::make_pair(ShaderType::Fragment, "shader/test.frag")
 	};
 
-	application.Init();
-	Application::SetBackgroundColor(15, 17, 19);
+	unsigned shaderTag = r->LoadShaders(shader_files);
+	unsigned modelTag = r->LoadFbx("model/PenguinBaseMesh.fbx");
+	unsigned textureTag = r->LoadTexture("texture/Penguin.png");
+	return r->CreateObject(modelTag, shaderTag, textureTag);
+}
 
-	rscmgr.Init();
-	rscmgr.CreateShader(shader_files);
-	Object* obj = rscmgr.LoadFbxAndCreateObject("model/PenguinBaseMesh.fbx", 0);
-	FBXNodePrinter::SetFileToShowInfo("model/PenguinBaseMesh.fbx");
-	rscmgr.SetGUIObject(obj);
-	obj->SetTexture(rscmgr.LoadTexture("texture/Penguin.png"));
-	Lights lights;
-	Light l1,l2;
-	l1.m_transform.Translate(glm::vec3(0, -5, 5));
-	l1.m_type = LightType::DIRECTIONAL;
-	l2.m_transform.Translate(glm::vec3(0, -5, 5));
-	l2.m_type = LightType::POINT;
-	lights.AddLight(l1);
-	lights.AddLight(l2);
-	lights.Init();
-	float f = 0.0f;
+int main(void)
+{
+	Application application(1000, 800);
+	Application::SetBackgroundColor(15, 17, 19);
+	ResourceManager resource;
+	GUI gui;
+	Lights* lights = CreateLights();
+
+	Object* obj = CreateObject(&resource);
+	gui.SetObject(obj);
+	
 	while(application.ShouldQuit() == false)
 	{
 		application.BeginUpdate();
 
 		if(Input::DropAndDropDetected())
 		{
-			const auto paths = Input::GetDroppedPaths();
-			for(const auto& p : paths)
-			{
-				std::string cmprstr = p.extension().string();
-				if (cmprstr == ".fbx"|| cmprstr == ".FBX")
-				{
-					FBXNodePrinter::SetFileToShowInfo(p);
-					rscmgr.DeleteObject(obj);
-					obj = rscmgr.LoadFbxAndCreateObject(p.string().c_str(), 0);
-
-					rscmgr.SetGUIObject(obj);
-				}
-				else if(cmprstr == ".png" || cmprstr == ".jpg" || cmprstr == ".bmp")
-				{
-					obj->SetTexture(rscmgr.LoadTexture(p.string().c_str()));
-				}
-			}
+			DragAndDrop(&resource, &gui, obj);
 		}
-		FBXNodePrinter::UpdateGUI();
-		rscmgr.UpdateObjectGUI();
-		obj->m_transform.Rotate(0, f, 0);
-		f += 0.6f;
-		lights.Update();
-		rscmgr.DrawTriangles();
+		gui.Update();
+		lights->Update();
+		resource.DrawTriangles();
 
 		application.EndUpdate();
 	}

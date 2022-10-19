@@ -5,13 +5,14 @@
  *	Desc		: Manage shader, object
  */
 #pragma once
-#include "stb_image.h"
 #include <vector>
 #include <string>
 #include <gl/glew.h>
 
 #include "Transform.h"
 #include "FBXImporter.h"
+
+#define ERROR_INDEX 9999
 
 enum class LightType
 {
@@ -47,63 +48,40 @@ public:
     unsigned m_tag = 0;
     std::string m_name;
     ShaderProgram* m_p_shader = nullptr;
-    std::vector<MeshGroup*> m_p_meshGroups;
+    MeshGroup* m_p_mesh = nullptr;
+    Texture* m_p_texture = nullptr;
     glm::vec4 m_color = glm::vec4{1};
 
     void Draw(Primitive primitive) const noexcept;
-    void SetTexture(unsigned texture_tag);
 };
 
 
 class ResourceManager
 {
+    friend class GUI;
+    typedef std::pair<std::string, unsigned> TexturePathID;
 public:
-    ResourceManager()=default;
+    ResourceManager();
     ~ResourceManager();
 
-    void Init() noexcept;
     void Clear() noexcept;
 
-    unsigned LoadFbx(const char* fbx_file_path) noexcept;
-    Object* LoadFbxAndCreateObject(const char* fbx_file_path, int shader_tag) noexcept;
-
-    unsigned LoadTexture(const char* texture_file_path) noexcept;
-
-    [[nodiscard]] std::vector<MeshGroup*> GetMeshByTag(const unsigned& target_tag) const noexcept;
-    [[nodiscard]] Object* GetObjectByName(std::string target_name) const noexcept;
-    [[nodiscard]] std::vector<Object*> GetObjectByTag(const unsigned& target_tag) const noexcept;
-    [[nodiscard]] ShaderProgram* GetShaderByTag(unsigned tag) const noexcept;
-
-    ShaderProgram* CreateShader(const std::vector<std::pair<ShaderType, std::filesystem::path>>& shader_files) noexcept;
-    Object* CreateObject(unsigned tag, const std::string& name, unsigned mesh_tag, unsigned shader_tag) noexcept;
-    void DeleteObject(Object* obj);
+    unsigned LoadFbx(const char* path) noexcept;
+    unsigned LoadTexture(const char* path) noexcept;
+    unsigned LoadShaders(const std::vector<std::pair<ShaderType, std::filesystem::path>>& paths) noexcept;
+    Object* CreateObject(unsigned mesh, unsigned shader, unsigned texture = ERROR_INDEX) noexcept;
+    Object* CreateObject(const char* path) noexcept;
+    void SetTextureToMainObject(unsigned texture_tag) noexcept;
 
     void DrawLines() const noexcept;
     void DrawTriangles() const noexcept;
 
 private:
-    std::vector<Object*> obj_storage;
-    std::vector<std::pair<std::string, unsigned>> texture_storage;
-    std::vector<std::vector<MeshGroup*>> gmesh_storage;
-    std::vector<ShaderProgram*> shader_storage;
-    std::string log_string;
-    GLuint fbo,depth;
-    unsigned screen;
+    static FrameBufferObject* m_fbo;
+    Object* m_object;
+    std::map<unsigned, Texture*> m_textures;
+    std::map<unsigned, MeshGroup*> m_meshes;
+    std::map<unsigned, ShaderProgram*> m_shaders;
 
-public:
-    void SetGUIObject(Object* obj) noexcept;
-    void UpdateObjectGUI() noexcept;
-private:
-    struct GUIObject
-    {
-        Object* object;
-        glm::vec3 position;
-        glm::vec3 rotation;
-        glm::vec3 scaling;
-        float scale;
-        float prevScale;
-        void DrawGUI() noexcept;
-    };
-    GUIObject m_guiObject;
 };
 
