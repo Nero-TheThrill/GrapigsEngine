@@ -1,3 +1,10 @@
+/*
+ *	Author		: Jiwoo Choi
+ *	Date		: 09/26/22
+ *	File Name	: Transform.cpp
+ *	Desc		: transform
+ */
+
 #include "Transform.h"
 #include <glm/gtc/matrix_transform.hpp>
 

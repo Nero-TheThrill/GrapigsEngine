@@ -190,6 +190,11 @@ void GUI::Update() noexcept
     meshWin.Update(p_object);
 }
 
+Mesh* GUI::GetMesh() noexcept
+{
+    return materialWin.p_mesh;
+}
+
 void GUI::MainMenuBar()
 {
     if (ImGui::BeginMainMenuBar())

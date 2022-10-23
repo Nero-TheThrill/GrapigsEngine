@@ -1,8 +1,8 @@
 /*
- *	Author		: Jiwoo Choi
+ *	Author		: Jinwoo Choi
  *	Date		: 09/26/22
- *	File Name	: ResourceManager.h
- *	Desc		: Manage shader, object
+ *	File Name	: Transform.h
+ *	Desc		: transform
  */
 #pragma once
 #include <glm/glm.hpp>

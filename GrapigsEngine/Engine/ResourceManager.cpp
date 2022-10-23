@@ -61,8 +61,6 @@ void Object::Draw(Primitive primitive) const noexcept
     m_p_shader->Use();
     m_p_shader->SendUniform("u_color", m_color);
     m_p_shader->SendUniform("u_modelToWorld", m_transform.GetTransformMatrix());
-    if (m_p_texture)
-        m_p_shader->SendUniform("u_texture", m_p_texture->Unit());
     m_p_mesh->Draw(primitive, m_p_shader);
     m_p_shader->UnUse();
 }
@@ -137,6 +135,13 @@ unsigned ResourceManager::LoadShaders(const std::vector<std::pair<ShaderType, st
     return tag;
 }
 
+Texture* ResourceManager::GetTexture(const unsigned tag) noexcept
+{
+    if (tag != ERROR_INDEX && m_textures.contains(tag))
+        return m_textures[tag];
+    return nullptr;
+}
+
 Object* ResourceManager::CreateObject(unsigned mesh, unsigned shader, unsigned texture) noexcept
 {
     if (m_object != nullptr)
@@ -147,8 +152,11 @@ Object* ResourceManager::CreateObject(unsigned mesh, unsigned shader, unsigned t
 	    m_object->m_p_mesh = m_meshes[mesh];
     if(m_shaders.contains(shader))
 	    m_object->m_p_shader = m_shaders[shader];
-    if(texture != ERROR_INDEX && m_textures.contains(texture))
-	    m_object->m_p_texture = m_textures[texture];
+    if (m_textures.contains(texture))
+    {
+        for(auto& m: m_object->m_p_mesh->m_meshes)
+            m.material.m_p_texture = m_textures[texture];
+    }
     return  m_object;
 }
 
@@ -163,11 +171,7 @@ Object* ResourceManager::CreateObject(const char* path) noexcept
     return m_object;
 }
 
-void ResourceManager::SetTextureToMainObject(unsigned texture_tag) noexcept
-{
-    if (texture_tag != ERROR_INDEX && m_textures.contains(texture_tag))
-        m_object->m_p_texture = m_textures[texture_tag];
-}
+
 
 void ResourceManager::DrawLines() const noexcept
 {

@@ -1,5 +1,6 @@
 /*
  *	Author		: Jina Hyun
+ *	2nd Author  : Jinwoo Choi
  *	Date		: 09/30/22
  *	File Name	: Shader.cpp
  *	Desc		: Create shader and shader program

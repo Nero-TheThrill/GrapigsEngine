@@ -37,6 +37,8 @@ class GUI
 public:
 	void SetObject(Object* object) noexcept;
 	void Update() noexcept;
+	Mesh* GetMesh() noexcept;
+
 private:
 	void MainMenuBar();
 	Object* p_object = nullptr;

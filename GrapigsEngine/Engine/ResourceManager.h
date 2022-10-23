@@ -1,5 +1,5 @@
 /*
- *	Author		: Jiwoo Choi
+ *	Author		: Jinwoo Choi
  *	Date		: 09/06/22
  *	File Name	: ResourceManager.h
  *	Desc		: Manage shader, object
@@ -49,7 +49,7 @@ public:
     std::string m_name;
     ShaderProgram* m_p_shader = nullptr;
     MeshGroup* m_p_mesh = nullptr;
-    Texture* m_p_texture = nullptr;
+
     glm::vec4 m_color = glm::vec4{1};
 
     void Draw(Primitive primitive) const noexcept;
@@ -69,9 +69,9 @@ public:
     unsigned LoadFbx(const char* path) noexcept;
     unsigned LoadTexture(const char* path) noexcept;
     unsigned LoadShaders(const std::vector<std::pair<ShaderType, std::filesystem::path>>& paths) noexcept;
+    Texture* GetTexture(const unsigned tag) noexcept;
     Object* CreateObject(unsigned mesh, unsigned shader, unsigned texture = ERROR_INDEX) noexcept;
     Object* CreateObject(const char* path) noexcept;
-    void SetTextureToMainObject(unsigned texture_tag) noexcept;
 
     void DrawLines() const noexcept;
     void DrawTriangles() const noexcept;

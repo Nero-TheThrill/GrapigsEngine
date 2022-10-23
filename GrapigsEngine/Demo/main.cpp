@@ -1,5 +1,5 @@
 /*
- *	Author		: Jina Hyun
+ *	Author		: Jina Hyun, Jinwoo Choi
  *	Date		: 09/05/22
  *	File Name	: main.cpp
  *	Desc		: main function
@@ -37,8 +37,11 @@ void DragAndDrop(ResourceManager* r, GUI* g, Object* o)
 		}
 		else if (cmprstr == ".png" || cmprstr == ".jpg" || cmprstr == ".bmp")
 		{
-			auto tex = r->LoadTexture(p.string().c_str());
-			r->SetTextureToMainObject(tex);
+			if (g->GetMesh() != nullptr)
+			{
+				auto tex = r->LoadTexture(p.string().c_str());
+				g->GetMesh()->material.m_p_texture = r->GetTexture(tex);
+			}
 		}
 	}
 }

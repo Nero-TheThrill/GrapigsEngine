@@ -10,6 +10,8 @@
 #include <glm/glm.hpp>	// glm
 #include "Shader.h" // ShaderProgram
 
+#define ERROR_INDEX 9999
+
 enum class Primitive
 {
     Lines = 0x001, LineLoop = 0x002, LineStrip = 0x003, Triangles = 0x004, TriangleStrip = 0x005, TriangleFan = 0x006
@@ -29,6 +31,7 @@ struct Material
     float ambient =0.4f;
     float diffuse = 0.3f;
     float specular = 0.2f;
+    Texture* m_p_texture = nullptr;
 };
 struct Mesh
 {
