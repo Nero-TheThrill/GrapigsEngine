@@ -1,5 +1,5 @@
 /*
- *	Author		: Jiwoo Choi
+ *	Author		: Jinwoo Choi
  *	Date		: 09/06/22
  *	File Name	: ResourceManager.cpp
  *	Desc		: Manage shader, object

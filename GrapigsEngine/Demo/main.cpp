@@ -6,6 +6,7 @@
  */
 
 #include "Application.h"
+#include "Camera.h"
 #include "Input.h"
 #include "ResourceManager.h"
 #include "GUI.h"
@@ -61,7 +62,9 @@ Object* CreateObject(ResourceManager* r)
 
 int main(void)
 {
-	Application application(1000, 800);
+	float width = 1000, height = 800;
+	CameraBuffer::s_m_aspectRatio = width / height;
+	Application application(static_cast<int>(width), static_cast<int>(height));
 	Application::SetBackgroundColor(255, 255, 255);
 	ResourceManager resource;
 	GUI gui;
