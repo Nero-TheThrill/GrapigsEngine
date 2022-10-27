@@ -15,9 +15,9 @@ Lights *CreateLights()
 {
 	Lights* lights = new Lights();
 	Light l1, l2;
-	l1.m_transform.Translate(glm::vec3(0, -5, 5));
+	l1.m_transform.Translate(glm::vec3(-2, 2, 1));
 	l1.m_type = LightType::DIRECTIONAL;
-	l2.m_transform.Translate(glm::vec3(0, -5, 5));
+	l2.m_transform.Translate(glm::vec3(-0.7, 1.5, 0.7));
 	l2.m_type = LightType::POINT;
 	lights->AddLight(l1);
 	lights->AddLight(l2);
@@ -41,7 +41,7 @@ void DragAndDrop(ResourceManager* r, GUI* g, Object* o)
 			if (g->GetMesh() != nullptr)
 			{
 				auto tex = r->LoadTexture(p.string().c_str());
-				g->GetMesh()->material.m_p_texture = r->GetTexture(tex);
+				g->GetMesh()->material.t_albedo = r->GetTexture(tex);
 			}
 		}
 	}
@@ -62,7 +62,7 @@ Object* CreateObject(ResourceManager* r)
 
 int main(void)
 {
-	float width = 1000, height = 800;
+	float width = 2000, height = 1600;
 	CameraBuffer::s_m_aspectRatio = width / height;
 	Application application(static_cast<int>(width), static_cast<int>(height));
 	Application::SetBackgroundColor(255, 255, 255);

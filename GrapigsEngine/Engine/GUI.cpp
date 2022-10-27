@@ -160,6 +160,8 @@ void GUI::MaterialWin::Content(Object* object)
         {
             ImGui::Separator();
             Material& m = p_mesh->material;
+            ImGui::SliderFloat("Metallic", &m.metallic, 0, 1, "%.2f");
+            ImGui::SliderFloat("Roughness", &m.roughness, 0, 1, "%.2f");
             ImGui::SliderFloat("Ambient", &m.ambient, 0, 1, "%.2f");
             ImGui::SliderFloat("Diffuse", &m.diffuse, 0, 1, "%.2f");
             ImGui::SliderFloat("Specular", &m.specular, 0, 1, "%.2f");

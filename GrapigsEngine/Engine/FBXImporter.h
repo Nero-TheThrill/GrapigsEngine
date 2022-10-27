@@ -28,10 +28,15 @@ struct Vertex
 
 struct Material
 {
+    float metallic = 0.f;
+    float roughness = 0.f;
     float ambient =0.4f;
     float diffuse = 0.3f;
     float specular = 0.2f;
-    Texture* m_p_texture = nullptr;
+    Texture* t_albedo = nullptr;
+    Texture* t_metallic = nullptr;
+    Texture* t_roughness = nullptr;
+    Texture* t_ao = nullptr;
 };
 struct Mesh
 {

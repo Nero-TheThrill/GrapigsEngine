@@ -155,7 +155,7 @@ Object* ResourceManager::CreateObject(unsigned mesh, unsigned shader, unsigned t
     if (m_textures.contains(texture))
     {
         for(auto& m: m_object->m_p_mesh->m_meshes)
-            m.material.m_p_texture = m_textures[texture];
+            m.material.t_albedo = m_textures[texture];
     }
     return  m_object;
 }
