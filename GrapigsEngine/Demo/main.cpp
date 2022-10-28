@@ -21,7 +21,6 @@ Lights *CreateLights()
 	l2.m_type = LightType::POINT;
 	lights->AddLight(l1);
 	lights->AddLight(l2);
-	lights->Init();
 	return lights;
 }
 
@@ -84,5 +83,6 @@ int main(void)
 	}
 	//delete mesh;
 	application.CleanUp();
+	delete lights;
 	return 0;
 }

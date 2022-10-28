@@ -10,7 +10,7 @@
 
  /* Light - start --------------------------------------------------------------------------------*/
 
-void Lights::Init()
+Lights::Lights() noexcept
 {
     GLsizeiptr size = 128 * 16 + 16;// 16 * (sizeof(unsigned) + 5 * sizeof(glm::vec3) + 3 * sizeof(float)) + sizeof(unsigned)+3 * sizeof(float) + 3 * sizeof(glm::vec3);
     glGenBuffers(1, &m_ubo);
@@ -18,6 +18,11 @@ void Lights::Init()
     glBufferData(GL_UNIFORM_BUFFER, size, nullptr, GL_DYNAMIC_DRAW);
     glBindBufferRange(GL_UNIFORM_BUFFER, 1, m_ubo, 0, size);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
+}
+
+Lights::~Lights() noexcept
+{
+    glDeleteBuffers(1, &m_ubo);
 }
 
 void Lights::Update()
@@ -97,6 +102,8 @@ void ResourceManager::Clear() noexcept
     delete m_object;
     m_object = nullptr;
     m_fbo->Clear();
+    delete m_fbo;
+    m_fbo = nullptr;
 }
 
 unsigned ResourceManager::LoadFbx(const char* path) noexcept

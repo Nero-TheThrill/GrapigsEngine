@@ -79,31 +79,3 @@ private:
     static std::size_t s_m_verticesCount;
     static int s_m_meshIndex;
 };
-
-class FBXNodePrinter
-{
-    struct TreeNode
-    {
-        std::string name;
-        std::string data_type;
-        std::string data;
-        std::vector<int> child;
-        static void DisplayNode(const std::vector<TreeNode>& all, const TreeNode& node) noexcept;
-    };
-public:
-    static void SetFileToShowInfo(const std::filesystem::path& path) noexcept;
-    static void UpdateGUI() noexcept;
-private:
-    static int SetTreeNode(const FbxNode* p_node) noexcept;
-    static std::string s_m_filePath, s_m_fileStatus;
-    static std::vector<int> s_m_treeHead;
-    static std::vector<TreeNode> s_m_tree;
-public:
-    static void Print(const FbxNode* p_root) noexcept;
-private:
-    [[nodiscard]] static constexpr std::string GetAttributeTypeName(const FbxNodeAttribute::EType type) noexcept;
-    static void PrintAttribute(const FbxNodeAttribute* p_attribute) noexcept;
-    static void PrintNode(const FbxNode* p_node) noexcept;
-    static void PrintTabs() noexcept;
-    static int s_tab;
-};

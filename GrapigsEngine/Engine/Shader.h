@@ -88,6 +88,7 @@ class FrameBufferObject
 {
 public:
 	FrameBufferObject();
+	~FrameBufferObject();
 
 	void Init(int width, int height) noexcept;
 	void Clear() noexcept;

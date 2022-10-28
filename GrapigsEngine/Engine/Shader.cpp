@@ -364,6 +364,12 @@ FrameBufferObject::FrameBufferObject()
 	: m_fboHandle(0), m_rboHandle(0), m_texture(0)
 {
 }
+
+FrameBufferObject::~FrameBufferObject()
+{
+	Clear();
+}
+
 void FrameBufferObject::Init(int width, int height) noexcept
 {
 	if (!m_fboHandle)

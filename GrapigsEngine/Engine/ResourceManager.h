@@ -33,7 +33,8 @@ struct Light
 class Lights
 {
 public:
-    void Init();
+    Lights() noexcept;
+    ~Lights() noexcept;
     void Update();
     void AddLight(Light light);
 private:
