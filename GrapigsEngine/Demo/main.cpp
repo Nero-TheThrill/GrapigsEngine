@@ -62,9 +62,7 @@ Object* CreateObject(ResourceManager* r)
 
 int main(void)
 {
-	float width = 2000, height = 1600;
-	CameraBuffer::s_m_aspectRatio = width / height;
-	Application application(static_cast<int>(width), static_cast<int>(height));
+	Application application(1200, 900);
 	Application::SetBackgroundColor(255, 255, 255);
 	ResourceManager resource;
 	GUI gui;

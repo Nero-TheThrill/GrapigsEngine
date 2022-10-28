@@ -111,6 +111,7 @@ Application::Application(int width, int height, const char* title)
 	ImGui_ImplGlfw_InitForOpenGL(glfwGetCurrentContext(), true);
 	ImGui_ImplOpenGL3_Init("#version 460");
 
+	CameraBuffer::s_m_aspectRatio = static_cast<float>(width) / static_cast<float>(height);
 	CameraBuffer::SetMainCamera(new Camera());
 	CameraBuffer::GetMainCamera()->Set(glm::vec3{ 0, 0.5f, 3 });
 	CameraBuffer::GetMainCamera()->Upward(-0.3f);
