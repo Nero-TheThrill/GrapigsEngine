@@ -118,10 +118,11 @@ void GUI::SceneWin::Content(Object* object)
     {
         const auto width = static_cast<float>(Input::s_m_windowSize.x);
         const auto height = static_cast<float>(Input::s_m_windowSize.y);
-        const auto window = ImGui::GetWindowSize();
+        const auto window = ImGui::GetContentRegionAvail();
         const float x = ((width - window.x) * 0.5f) / width;
         const float y = ((height - window.y) * 0.5f) / height;
-        ImGui::Image((void*)ResourceManager::m_fbo->GetTexture(), ImGui::GetWindowSize(), ImVec2(x, 1 - y), ImVec2(1 - x, y));
+
+        ImGui::Image((void*)ResourceManager::m_fbo->GetTexture(), window, ImVec2(x, 1 - y), ImVec2(1 - x, y));
     }
     ImGui::End();
 }
@@ -137,35 +138,35 @@ void GUI::MeshWin::Content(Object* object)
     ImGui::End();
 }
 
-void GUI::MeshWin::RecursiveMesh(Object* object, Mesh* mesh) noexcept
+void GUI::MeshWin::RecursiveMesh(Object* p_object, Mesh* p_mesh) noexcept
 {
     static int selection_mask = (1 << 2);
     static ImGuiTreeNodeFlags base = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_SpanFullWidth;
     static ImGuiTreeNodeFlags leaf = base | ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 
     int clicked_index = -1;
-    const bool is_selected = (selection_mask & (1 << mesh->index)) != 0;
-    const bool is_leaf = mesh->children.empty();
+    const bool is_selected = (selection_mask & (1 << p_mesh->index)) != 0;
+    const bool is_leaf = p_mesh->children.empty();
 
     ImGuiTreeNodeFlags flag = is_leaf ? leaf : base;
     if (is_selected)
         flag |= ImGuiTreeNodeFlags_Selected;
 
-    const bool is_open = ImGui::TreeNodeEx((void*)(intptr_t)mesh->index, flag, mesh->name.c_str());
+    const bool is_open = ImGui::TreeNodeEx((void*)(intptr_t)p_mesh->index, flag, p_mesh->name.c_str());
     if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
-        clicked_index = mesh->index;
+        clicked_index = p_mesh->index;
 
     if (ImGui::BeginDragDropSource())
     {
-        ImGui::SetDragDropPayload("_MeshNode", (const void*)&mesh->index, sizeof(int));
-        ImGui::Text(mesh->name.c_str());
+        ImGui::SetDragDropPayload("_MeshNode", (const void*)&p_mesh->index, sizeof(int));
+        ImGui::Text(p_mesh->name.c_str());
         ImGui::EndDragDropSource();
     }
 
     if (is_leaf == false && is_open == true)
     {
-        for (const auto& c : mesh->children)
-            RecursiveMesh(object, &object->m_p_mesh->m_meshes[c]);
+        for (const auto& c : p_mesh->children)
+            RecursiveMesh(p_object, &p_object->m_p_mesh->m_meshes[c]);
         ImGui::TreePop();
     }
 
@@ -239,8 +240,7 @@ void GUI::SetObject(Object* object) noexcept
 
 void GUI::Update() noexcept
 {
-    ShowFullScreen();
-    MainMenuBar();
+    DockSpace();
     m_transformWin.Update(p_object);
     m_materialWin.Update(p_object);
     m_sceneWin.Update(p_object);
@@ -260,6 +260,31 @@ void GUI::ImportTexture(const std::filesystem::path& path) noexcept
 		ImGui::OpenPopup("Import Texture");
     else
 		ImGui::OpenPopup("Import Texture Error");
+}
+
+void GUI::DockSpace() noexcept
+{
+    constexpr ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
+    constexpr ImGuiWindowFlags window_flags =  ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove
+		| ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoBackground;
+
+    // Set docking window style
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+
+    // Set position and size
+    const ImGuiViewport* viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(viewport->WorkPos);
+    ImGui::SetNextWindowSize(viewport->WorkSize);
+    ImGui::SetNextWindowViewport(viewport->ID);
+    ImGui::Begin("DockSpace", NULL, window_flags);
+    ImGui::PopStyleVar(3);
+    ImGui::DockSpace(ImGui::GetID("DockSpace"), ImVec2(0.0f, 0.0f), dockspace_flags);
+
+	MainMenuBar();
+
+    ImGui::End();
 }
 
 void GUI::MainMenuBar() noexcept
@@ -332,26 +357,6 @@ void GUI::ImportTextureModalUpdate() noexcept
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();
-    }
-}
-
-void GUI::ShowFullScreen() const noexcept
-{
-    static bool background = true;
-    if (background)
-    {
-        static ImGuiWindowFlags flags = 
-            ImGuiWindowFlags_NoDecoration
-            | ImGuiWindowFlags_NoMove
-            | ImGuiWindowFlags_NoSavedSettings
-            | ImGuiWindowFlags_NoBackground
-            | ImGuiWindowFlags_NoBringToFrontOnFocus;
-
-        const ImGuiViewport* viewport = ImGui::GetMainViewport();
-        ImGui::SetNextWindowPos(viewport->WorkPos);
-        ImGui::SetNextWindowSize(viewport->WorkSize);
-        ImGui::Begin("Example: Fullscreen window", &background, flags);
-        ImGui::End();
     }
 }
 

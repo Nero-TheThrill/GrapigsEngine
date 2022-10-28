@@ -42,7 +42,7 @@ class GUI
 	struct MeshWin final : Window
 	{
 		void Content([[maybe_unused]] Object* object) override;
-		void RecursiveMesh(Object* object, Mesh* mesh) noexcept;
+		void RecursiveMesh(Object* p_object, Mesh* p_mesh) noexcept;
 	};
 	struct MaterialWin final : Window
 	{
@@ -59,6 +59,7 @@ public:
 	void ImportTexture(const std::filesystem::path& path) noexcept;
 
 private:
+	void DockSpace() noexcept;
 	void MainMenuBar() noexcept;
 	void ImportTextureModalUpdate() noexcept;
 	ResourceManager* m_p_resourceManager = nullptr;
@@ -69,6 +70,4 @@ private:
 	MaterialWin m_materialWin;
 	std::filesystem::path m_texturePath;
 	DropDown m_texTypeDropDown;
-
-	void ShowFullScreen() const noexcept;
 };
