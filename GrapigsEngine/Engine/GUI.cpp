@@ -17,7 +17,57 @@ namespace
     {
         return std::to_string(value);
     }
+
+    float ClampTo360(float a)
+    {
+        if (a > 360)
+            return 0;
+    	if (a < 0)
+            return 360;
+        return a;
+    }
 }
+
+/* namespace - end ------------------------------------------------------------------------------*/
+/*-----------------------------------------------------------------------------------------------*/
+/* GUI::DropDown - start ------------------------------------------------------------------------*/
+
+GUI::DropDown::DropDown(const std::string& label) noexcept
+    : m_label(label)
+{
+}
+
+void GUI::DropDown::ClearData() noexcept
+{
+    m_data.clear();
+    m_dataSize = 0;
+    m_selected = 0;
+}
+
+void GUI::DropDown::AddData(const char* datum) noexcept
+{
+    m_dataSize++;
+    m_data.push_back(datum);
+}
+
+bool GUI::DropDown::Combo() noexcept
+{
+    return ImGui::Combo(m_label.c_str(), &m_selected, m_data.data(), m_dataSize);
+}
+
+int GUI::DropDown::GetSelectedIndex() const noexcept
+{
+    return m_selected;
+}
+
+std::string GUI::DropDown::GetSelectedString() const noexcept
+{
+    return m_data[m_selected];
+}
+
+/* GUI::DropDown - end --------------------------------------------------------------------------*/
+/*-----------------------------------------------------------------------------------------------*/
+/* GUI - start ----------------------------------------------------------------------------------*/
 
 void GUI::Window::Update(Object* object)
 {
@@ -27,6 +77,8 @@ void GUI::Window::Update(Object* object)
     }
 }
 
+/* Transform Window -----------------------------------------------------------------------------*/
+
 void GUI::TransformWin::Content(Object* object)
 {
     if (ImGui::Begin("Transform", &m_open))
@@ -35,28 +87,11 @@ void GUI::TransformWin::Content(Object* object)
             object->m_transform.Translate(m_pos);
         if (ImGui::DragFloat3("Rotation", &m_rot[0], 1, 0, 0, "%.1f"))
         {
-            if (m_rot.x > 360)
-                m_rot.x = 0;
-            else if (m_rot.x < 0)
-                m_rot.x = 360;
-            if (m_rot.y > 360)
-                m_rot.y = 0;
-            else if (m_rot.y < 0)
-                m_rot.y = 360;
-            if (m_rot.z > 360)
-                m_rot.z = 0;
-            else if (m_rot.z < 0)
-                m_rot.z = 360;
+            m_rot.x = ClampTo360(m_rot.x); m_rot.y = ClampTo360(m_rot.y); m_rot.z = ClampTo360(m_rot.z);
             object->m_transform.Rotate(m_rot.x, m_rot.y, m_rot.z);
         }
-        if (ImGui::DragFloat3("Scaling", &m_scl[0], 0.01f, 0, 0, "%.2f"))
+        if (ImGui::DragFloat3("Scaling", &m_scl[0], 0.01f, 0.001f, 1000, "%.2f"))
         {
-            if (m_scl.x < std::numeric_limits<float>::epsilon())
-                m_scl.x = 0.001f;
-            if (m_scl.y < std::numeric_limits<float>::epsilon())
-                m_scl.y = 0.001f;
-            if (m_scl.z < std::numeric_limits<float>::epsilon())
-                m_scl.z = 0.001f;
             object->m_transform.Scale(m_scl);
             m_uscl = 1;
             m_prevScl = 1;
@@ -75,6 +110,8 @@ void GUI::TransformWin::Content(Object* object)
     ImGui::End();
 }
 
+/* Scene Window ---------------------------------------------------------------------------------*/
+
 void GUI::SceneWin::Content(Object* object)
 {
     if (ImGui::Begin("Scene", &m_open))
@@ -88,6 +125,8 @@ void GUI::SceneWin::Content(Object* object)
     }
     ImGui::End();
 }
+
+/* Mesh Window ----------------------------------------------------------------------------------*/
 
 void GUI::MeshWin::Content(Object* object)
 {
@@ -139,6 +178,8 @@ void GUI::MeshWin::RecursiveMesh(Object* object, Mesh* mesh) noexcept
     }
 }
 
+/* Material Window ------------------------------------------------------------------------------*/
+
 void GUI::MaterialWin::Content(Object* object)
 {
     if (ImGui::Begin("Material", &m_open))
@@ -170,43 +211,67 @@ void GUI::MaterialWin::Content(Object* object)
     ImGui::End();
 }
 
+GUI::GUI() noexcept
+    : m_texTypeDropDown("Texture Type")
+{
+    m_texTypeDropDown.AddData("Albedo(default)");
+    m_texTypeDropDown.AddData("Metalness");
+    m_texTypeDropDown.AddData("Roughness");
+    m_texTypeDropDown.AddData("Ambient Occlusion");
+}
+
+void GUI::SetResourceManager(ResourceManager* resource) noexcept
+{
+    m_p_resourceManager = resource;
+}
+
 void GUI::SetObject(Object* object) noexcept
 {
     p_object = object;
 	const Transform& t = p_object->m_transform;
-    transformWin.m_pos = t.GetPosition();
-    transformWin.m_rot = t.GetRotation();
-    transformWin.m_scl = t.GetScaling();
-    transformWin.m_prevScl = 1;
-    transformWin.m_uscl = 1;
-    materialWin.m_notice = "<Drag and Drop Material>";
+    m_transformWin.m_pos = t.GetPosition();
+    m_transformWin.m_rot = t.GetRotation();
+    m_transformWin.m_scl = t.GetScaling();
+    m_transformWin.m_prevScl = 1;
+    m_transformWin.m_uscl = 1;
+    m_materialWin.m_notice = "<Drag and Drop Mesh from Mesh Window>";
 }
 
 void GUI::Update() noexcept
 {
     ShowFullScreen();
     MainMenuBar();
-    transformWin.Update(p_object);
-    materialWin.Update(p_object);
-    sceneWin.Update(p_object);
-    meshWin.Update(p_object);
+    m_transformWin.Update(p_object);
+    m_materialWin.Update(p_object);
+    m_sceneWin.Update(p_object);
+    m_meshWin.Update(p_object);
+    ImportTextureModalUpdate();
 }
 
-Mesh* GUI::GetMesh() noexcept
+Mesh* GUI::GetMesh() const noexcept
 {
-    return materialWin.p_mesh;
+    return m_materialWin.p_mesh;
 }
 
-void GUI::MainMenuBar()
+void GUI::ImportTexture(const std::filesystem::path& path) noexcept
+{
+    m_texturePath = path;
+    if(m_materialWin.p_mesh != nullptr)
+		ImGui::OpenPopup("Import Texture");
+    else
+		ImGui::OpenPopup("Import Texture Error");
+}
+
+void GUI::MainMenuBar() noexcept
 {
     if (ImGui::BeginMainMenuBar())
     {
         if(ImGui::BeginMenu("Windows"))
         {
-            ImGui::MenuItem("Transform Window", "", &transformWin.m_open);
-            ImGui::MenuItem("Material Window", "", &materialWin.m_open);
-            ImGui::MenuItem("Scene Window", "", &sceneWin.m_open);
-            ImGui::MenuItem("Mesh Window", "", &meshWin.m_open);
+            ImGui::MenuItem("Transform Window", "", &m_transformWin.m_open);
+            ImGui::MenuItem("Material Window", "", &m_materialWin.m_open);
+            ImGui::MenuItem("Scene Window", "", &m_sceneWin.m_open);
+            ImGui::MenuItem("Mesh Window", "", &m_meshWin.m_open);
             ImGui::EndMenu();
         }
 
@@ -214,7 +279,63 @@ void GUI::MainMenuBar()
     }
 }
 
-void GUI::ShowFullScreen() noexcept
+void GUI::ImportTextureModalUpdate() noexcept
+{
+    const ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+
+    // Open texture import modal window
+    // Select the type to import the texture
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    if (ImGui::BeginPopupModal("Import Texture", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::TextUnformatted(m_texturePath.filename().string().c_str());
+        m_texTypeDropDown.Combo();
+        ImGui::Separator();
+        if (ImGui::Button("OK", ImVec2(120, 0)))
+        {
+            const auto tex = m_p_resourceManager->LoadTexture(m_texturePath.string().c_str());
+            switch (m_texTypeDropDown.GetSelectedIndex())
+            {
+            case 1:
+                m_materialWin.p_mesh->material.t_metallic = m_p_resourceManager->GetTexture(tex);
+                break;
+            case 2:
+                m_materialWin.p_mesh->material.t_roughness = m_p_resourceManager->GetTexture(tex);
+                break;
+            case 3:
+                m_materialWin.p_mesh->material.t_ao = m_p_resourceManager->GetTexture(tex);
+                break;
+            default:
+                m_materialWin.p_mesh->material.t_albedo = m_p_resourceManager->GetTexture(tex);
+                break;
+            }
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SetItemDefaultFocus();
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel", ImVec2(120, 0)))
+        {
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+
+    // If the mesh is not set, the texture won't be applied
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    if(ImGui::BeginPopupModal("Import Texture Error", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::TextUnformatted("The mesh must be selected\n\ton the material window!");
+
+        ImGui::SetCursorPosX(40);
+        if (ImGui::Button("Okay", ImVec2(120, 0)))
+        {
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+}
+
+void GUI::ShowFullScreen() const noexcept
 {
     static bool background = true;
     if (background)
@@ -233,3 +354,5 @@ void GUI::ShowFullScreen() noexcept
         ImGui::End();
     }
 }
+
+/* GUI - end ------------------------------------------------------------------------------------*/

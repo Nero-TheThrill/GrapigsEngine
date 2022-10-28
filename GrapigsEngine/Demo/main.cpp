@@ -38,11 +38,7 @@ void DragAndDrop(ResourceManager* r, GUI* g, Object* o)
 		}
 		else if (cmprstr == ".png" || cmprstr == ".jpg" || cmprstr == ".bmp")
 		{
-			if (g->GetMesh() != nullptr)
-			{
-				auto tex = r->LoadTexture(p.string().c_str());
-				g->GetMesh()->material.t_albedo = r->GetTexture(tex);
-			}
+			g->ImportTexture(p);
 		}
 	}
 }
@@ -66,6 +62,7 @@ int main(void)
 	Application::SetBackgroundColor(255, 255, 255);
 	ResourceManager resource;
 	GUI gui;
+	gui.SetResourceManager(&resource);
 	Lights* lights = CreateLights();
 
 	Object* obj = CreateObject(&resource);

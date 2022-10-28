@@ -9,6 +9,23 @@
 
 class GUI
 {
+	class DropDown
+	{
+	public:
+		DropDown() = delete;
+		DropDown(const std::string& label) noexcept;
+		void ClearData() noexcept;
+		void AddData(const char* datum) noexcept;
+		bool Combo() noexcept;
+		[[nodiscard]] int GetSelectedIndex() const noexcept;
+		[[nodiscard]] std::string GetSelectedString() const noexcept;
+	private:
+		std::string m_label{};
+		int m_selected = 0;
+		int m_dataSize = 0;
+		std::vector<const char*> m_data;
+	};
+
 	struct Window
 	{
 		void Update(Object* object);
@@ -31,21 +48,27 @@ class GUI
 	{
 		void Content([[maybe_unused]] Object* object) override;
 		std::string m_notice;
-		Mesh* p_mesh;
+		Mesh* p_mesh = nullptr;
 	};
-
 public:
+	GUI() noexcept;
+	void SetResourceManager(ResourceManager* resource) noexcept;
 	void SetObject(Object* object) noexcept;
 	void Update() noexcept;
-	Mesh* GetMesh() noexcept;
+	Mesh* GetMesh() const noexcept;
+	void ImportTexture(const std::filesystem::path& path) noexcept;
 
 private:
-	void MainMenuBar();
+	void MainMenuBar() noexcept;
+	void ImportTextureModalUpdate() noexcept;
+	ResourceManager* m_p_resourceManager = nullptr;
 	Object* p_object = nullptr;
-	TransformWin transformWin;
-	SceneWin sceneWin;
-	MeshWin meshWin;
-	MaterialWin materialWin;
+	TransformWin m_transformWin;
+	SceneWin m_sceneWin;
+	MeshWin m_meshWin;
+	MaterialWin m_materialWin;
+	std::filesystem::path m_texturePath;
+	DropDown m_texTypeDropDown;
 
-	void ShowFullScreen() noexcept;
+	void ShowFullScreen() const noexcept;
 };
