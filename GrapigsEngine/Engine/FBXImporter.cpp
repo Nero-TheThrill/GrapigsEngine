@@ -15,6 +15,11 @@
 
  /* Model - start --------------------------------------------------------------------------------*/
 
+Model::Model(const std::filesystem::path& file_path)
+	: m_path(file_path)
+{
+}
+
 Model::~Model()
 {
 	Clear();
@@ -246,18 +251,19 @@ namespace ParseHelper
 /*-----------------------------------------------------------------------------------------------*/
 /* FBXImporter - start --------------------------------------------------------------------------*/
 
+std::filesystem::path FBXImporter::s_path{ "" };
 std::size_t FBXImporter::s_m_verticesCount = 0;
 int FBXImporter::s_m_meshIndex = -1;
 
 Model* FBXImporter::Load(const char* file_path) noexcept
 {
-	const std::filesystem::path path(file_path);
+	s_path = std::filesystem::path{file_path};
 	if (std::filesystem::exists(file_path) == false)
 	{
 		std::cout << "[FBXImporter]: " << file_path << " does not exist." << std::endl;
 		return nullptr;
 	}
-	if (path.extension() != ".fbx")
+	if (s_path.extension() != ".fbx")
 	{
 		std::cout << "[FBXImporter]: Unable to parse " << file_path << std::endl;
 		return nullptr;
@@ -312,7 +318,7 @@ Model* FBXImporter::Parse(FbxNode* p_root) noexcept
 
 	if (p_root)
 	{
-		model = new Model();
+		model = new Model(s_path);
 		bool is_mesh_exist = false;
 		model->m_meshes.resize(1);
 		model->m_root = 0;

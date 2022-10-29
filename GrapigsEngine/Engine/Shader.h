@@ -78,8 +78,9 @@ public:
 
 	const bool m_initialized;
 	const unsigned m_tag = 0;
+	const std::string m_name;
+	const std::filesystem::path m_path;
 private:
-	const std::filesystem::path m_filePath;
 	unsigned m_handle = 0;
 	unsigned m_unit = 0;
 };

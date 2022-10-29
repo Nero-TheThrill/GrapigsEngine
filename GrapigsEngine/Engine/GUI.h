@@ -6,6 +6,7 @@
  */
 #pragma once
 #include <queue>	// std::queue
+#include <set>      // std::set
 #include "ResourceManager.h"
 
 class GUI
@@ -51,12 +52,21 @@ class GUI
 		std::string m_notice;
 		Mesh* p_mesh = nullptr;
 	};
+	struct LoadedWin final : Window
+	{
+		LoadedWin() noexcept;
+		void Content([[maybe_unused]] Object* object) override;
+		void AddModelData(const Model* p_model) noexcept;
+		void AddTextureData(const Texture* p_texture) noexcept;
+		DropDown m_modelDD, m_textureDD;
+		std::set<unsigned> m_modelTags, m_textureTags;
+	};
 	struct TextureModalWin final : Window
 	{
 		TextureModalWin() noexcept;
-		void Content(Object* object) override;
+		void Content([[maybe_unused]] Object* object) override;
 		void OpenTextureModal(const Mesh* p_mesh) const noexcept;
-		void ImportTextureModalUpdate(ResourceManager* p_resource, Object * p_object, Mesh* p_mesh) noexcept;
+		void ImportTextureModalUpdate(ResourceManager* p_resource, Object* p_object, Mesh* p_mesh, LoadedWin* loaded_win) noexcept;
 		std::queue<std::filesystem::path> m_texturePaths;
 		DropDown m_texTypeDropDown;
 	};
@@ -66,7 +76,6 @@ public:
 	void Update() noexcept;
 	Mesh* GetMesh() const noexcept;
 	void ImportTexture(const std::filesystem::path& path) noexcept;
-
 private:
 	void DockSpace() noexcept;
 	void MainMenuBar() noexcept;
@@ -77,4 +86,5 @@ private:
 	MeshWin m_meshWin;
 	MaterialWin m_materialWin;
 	TextureModalWin m_textureModalWin;
+	LoadedWin m_loadedWin;
 };

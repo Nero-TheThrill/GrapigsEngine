@@ -5,10 +5,10 @@
  *	Desc		: ImGui contents
  */
 #include "GUI.h"
-#include <string>
+#include <string>   // std::string
 #include <imgui.h>  // ImGui::
 
-#include "Input.h"
+#include "Input.h"  // Input::s_windowSize
 
 namespace
 {
@@ -209,6 +209,47 @@ void GUI::MaterialWin::Content(Object* object)
     ImGui::End();
 }
 
+/* Loaded Window --------------------------------------------------------------------------------*/
+
+GUI::LoadedWin::LoadedWin() noexcept
+    : m_modelDD("Models"), m_textureDD("Textures")
+{
+}
+
+void GUI::LoadedWin::Content(Object* object)
+{
+    if (ImGui::Begin("Loaded Assets"))
+    {
+        m_modelDD.Combo();
+        ImGui::Separator();
+        m_textureDD.Combo();
+        ImGui::End();
+    }
+}
+
+void GUI::LoadedWin::AddModelData(const Model* p_model) noexcept
+{
+    for(const auto& tag : m_modelTags)
+    {
+        if (p_model->m_tag == tag)
+            return;
+    }
+    m_modelTags.insert(p_model->m_tag);
+    m_modelDD.AddData(p_model->m_name.c_str());
+}
+
+void GUI::LoadedWin::AddTextureData(const Texture* p_texture) noexcept
+{
+    for (const auto& tag : m_textureTags)
+    {
+        if (p_texture->m_tag == tag)
+            return;
+    }
+    m_textureTags.insert(p_texture->m_tag);
+    m_textureDD.AddData(p_texture->m_name.c_str());
+}
+
+
 /* TextureModal Window --------------------------------------------------------------------------*/
 
 GUI::TextureModalWin::TextureModalWin() noexcept
@@ -239,7 +280,7 @@ void GUI::TextureModalWin::OpenTextureModal(const Mesh* p_mesh) const noexcept
         ImGui::OpenPopup("Import Texture To All Meshes");
 }
 
-void GUI::TextureModalWin::ImportTextureModalUpdate(ResourceManager* p_resource, Object* p_object, Mesh* p_mesh) noexcept
+void GUI::TextureModalWin::ImportTextureModalUpdate(ResourceManager* p_resource, Object* p_object, Mesh* p_mesh, LoadedWin* loaded_win) noexcept
 {
     if (m_open)
     {
@@ -262,6 +303,7 @@ void GUI::TextureModalWin::ImportTextureModalUpdate(ResourceManager* p_resource,
         {
             const auto tex = p_resource->LoadTexture(path.string().c_str());
             auto* texture = p_resource->GetTexture(tex);
+            loaded_win->AddTextureData(texture);
             switch (m_texTypeDropDown.GetSelectedIndex())
             {
             case 1: p_mesh->material.t_metallic = texture; break;
@@ -296,6 +338,7 @@ void GUI::TextureModalWin::ImportTextureModalUpdate(ResourceManager* p_resource,
         {
             const auto tex = p_resource->LoadTexture(path.string().c_str());
             auto* texture = p_resource->GetTexture(tex);
+        	loaded_win->AddTextureData(texture);
             auto& meshes = p_object->m_p_model->m_meshes;
             switch (m_texTypeDropDown.GetSelectedIndex())
             {
@@ -361,6 +404,21 @@ void GUI::SetObject(Object* object) noexcept
     m_transformWin.m_prevScl = 1;
     m_transformWin.m_uscl = 1;
     m_materialWin.m_notice = "<Drag and Drop Mesh from Mesh Window>";
+
+    m_loadedWin.AddModelData(m_p_object->m_p_model);
+    const auto& meshes = m_p_object->m_p_model->m_meshes;
+    std::set<Texture*> textures;
+    for (std::size_t i = 1; i < meshes.size(); ++i)
+    {
+        const auto& mat = meshes[i].material;
+        if (mat.t_albedo)       textures.insert(mat.t_albedo);
+        if (mat.t_ao)           textures.insert(mat.t_ao);
+        if (mat.t_metallic)     textures.insert(mat.t_metallic);
+        if (mat.t_normal)       textures.insert(mat.t_normal);
+        if (mat.t_roughness)    textures.insert(mat.t_roughness);
+    }
+    for (auto& texture : textures)
+        m_loadedWin.AddTextureData(texture);
 }
 
 void GUI::Update() noexcept
@@ -371,7 +429,8 @@ void GUI::Update() noexcept
     m_sceneWin.Update(m_p_object);
     m_meshWin.Update(m_p_object);
     m_textureModalWin.Update(m_p_object);
-    m_textureModalWin.ImportTextureModalUpdate(m_p_resourceManager, m_p_object, m_materialWin.p_mesh);
+    m_textureModalWin.ImportTextureModalUpdate(m_p_resourceManager, m_p_object, m_materialWin.p_mesh, &m_loadedWin);
+    m_loadedWin.Update(m_p_object);
 }
 
 Mesh* GUI::GetMesh() const noexcept

@@ -52,7 +52,7 @@ struct Mesh
 class Model
 {
 public:
-    Model() = default;
+    Model(const std::filesystem::path& file_path);
     ~Model();
     void InitBuffers(int largest_index) noexcept;
     void Clear() noexcept;
@@ -62,6 +62,7 @@ public:
     int m_root = -1;
     std::vector<Mesh> m_meshes;
     const unsigned m_tag = 0;
+    const std::filesystem::path m_path;
 private:
     void Draw(Primitive primitive, ShaderProgram* program, int index, glm::mat4 transform) const noexcept;
     unsigned m_vao = 0, m_vbo = 0;
@@ -76,6 +77,7 @@ private:
 	static Model* Parse(FbxNode* p_root) noexcept;
 	static int ParseNode(FbxNode* p_node, int parent, std::vector<Mesh>& meshes) noexcept;
 	static std::vector<Vertex> GetVertices( FbxMesh* p_mesh) noexcept;
+    static std::filesystem::path s_path;
     static std::size_t s_m_verticesCount;
     static int s_m_meshIndex;
 };

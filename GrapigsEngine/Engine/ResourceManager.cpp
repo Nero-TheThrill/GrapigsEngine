@@ -108,12 +108,22 @@ void ResourceManager::Clear() noexcept
 
 unsigned ResourceManager::LoadFbx(const char* path) noexcept
 {
-    const auto& mesh = FBXImporter::Load(path);
-    if(mesh != nullptr)
+    // If it is already exist, load existing model
+    const std::filesystem::path file_path{ path };
+    for(const auto& m : m_models)
+    {
+        if (m.second->m_path == file_path)
+            return m.second->m_tag;
+    }
+
+    // Load model
+    const auto& model = FBXImporter::Load(path);
+    if(model != nullptr)
     {
 	    const auto tag = static_cast<unsigned>(m_models.size());
-        const_cast<unsigned&>(mesh->m_tag) = tag;
-        m_models[tag] = mesh;
+        const_cast<unsigned&>(model->m_tag) = tag;
+        m_models[tag] = model;
+        model->m_name = file_path.filename().string();
 		return tag;
     }
     return ERROR_INDEX;
@@ -121,6 +131,15 @@ unsigned ResourceManager::LoadFbx(const char* path) noexcept
 
 unsigned ResourceManager::LoadTexture(const char* path) noexcept
 {
+    // If it is already exist, load existing texture
+    const std::filesystem::path file_path{ path };
+    for (const auto& m : m_textures)
+    {
+        if (m.second->m_path == file_path)
+            return m.second->m_tag;
+    }
+
+    // Load texture
     auto* texture = new Texture(path);
     if(texture->m_initialized)
     {
@@ -159,8 +178,9 @@ Object* ResourceManager::CreateObject(unsigned mesh, unsigned shader, unsigned t
 	    m_object->m_p_shader = m_shaders[shader];
     if (m_textures.contains(texture))
     {
-        for(auto& m: m_object->m_p_model->m_meshes)
-            m.material.t_albedo = m_textures[texture];
+        auto& meshes = m_object->m_p_model->m_meshes;
+        for(std::size_t i = 1; i < meshes.size(); ++i)
+            meshes[i].material.t_albedo = m_textures[texture];
     }
     return  m_object;
 }

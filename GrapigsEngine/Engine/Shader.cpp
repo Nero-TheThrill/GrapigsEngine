@@ -317,14 +317,14 @@ void ShaderProgram::PrintActiveUniforms() const noexcept
 unsigned Texture::s_textureCount = 1;
 
 Texture::Texture(const char* file_path) noexcept
-	: m_initialized(false), m_filePath(file_path)
+	: m_initialized(false), m_name(std::filesystem::path{ file_path }.filename().string()), m_path(file_path)
 {
 	stbi_set_flip_vertically_on_load(true);
 	int width, height, channels;
-	unsigned char* data = stbi_load(m_filePath.string().c_str(), &width, &height, &channels, 0);
+	unsigned char* data = stbi_load(m_path.string().c_str(), &width, &height, &channels, 0);
 	if (data == nullptr)
 	{
-		std::cout << "[Texture] Error: Unable to load " << m_filePath << std::endl;
+		std::cout << "[Texture] Error: Unable to load " << m_path << std::endl;
 		return;
 	}
 
