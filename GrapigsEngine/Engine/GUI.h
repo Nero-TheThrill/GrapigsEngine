@@ -51,8 +51,16 @@ class GUI
 		std::string m_notice;
 		Mesh* p_mesh = nullptr;
 	};
+	struct TextureModalWin final : Window
+	{
+		TextureModalWin() noexcept;
+		void Content(Object* object) override;
+		void OpenTextureModal(const Mesh* p_mesh) const noexcept;
+		void ImportTextureModalUpdate(ResourceManager* p_resource, Object * p_object, Mesh* p_mesh) noexcept;
+		std::queue<std::filesystem::path> m_texturePaths;
+		DropDown m_texTypeDropDown;
+	};
 public:
-	GUI() noexcept;
 	void SetResourceManager(ResourceManager* resource) noexcept;
 	void SetObject(Object* object) noexcept;
 	void Update() noexcept;
@@ -62,14 +70,11 @@ public:
 private:
 	void DockSpace() noexcept;
 	void MainMenuBar() noexcept;
-	void OpenTextureModel() const noexcept;
-	void ImportTextureModalUpdate() noexcept;
 	ResourceManager* m_p_resourceManager = nullptr;
 	Object* m_p_object = nullptr;
 	TransformWin m_transformWin;
 	SceneWin m_sceneWin;
 	MeshWin m_meshWin;
 	MaterialWin m_materialWin;
-	std::queue<std::filesystem::path> m_texturePaths;
-	DropDown m_texTypeDropDown;
+	TextureModalWin m_textureModalWin;
 };

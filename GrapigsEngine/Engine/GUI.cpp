@@ -209,15 +209,142 @@ void GUI::MaterialWin::Content(Object* object)
     ImGui::End();
 }
 
-GUI::GUI() noexcept
+/* TextureModal Window --------------------------------------------------------------------------*/
+
+GUI::TextureModalWin::TextureModalWin() noexcept
     : m_texTypeDropDown("Texture Type")
 {
+    m_open = false;
     m_texTypeDropDown.AddData("Albedo(default)");
     m_texTypeDropDown.AddData("Metalness");
     m_texTypeDropDown.AddData("Roughness");
     m_texTypeDropDown.AddData("Ambient Occlusion");
     m_texTypeDropDown.AddData("Normal Map");
 }
+
+void GUI::TextureModalWin::Content(Object* object)
+{
+}
+
+void GUI::TextureModalWin::OpenTextureModal(const Mesh* p_mesh) const noexcept
+{
+    if (p_mesh != nullptr)
+    {
+        if (p_mesh->parent == -1) // root
+            ImGui::OpenPopup("Import Texture To All Meshes");
+        else
+            ImGui::OpenPopup("Import Texture");
+    }
+    else
+        ImGui::OpenPopup("Import Texture To All Meshes");
+}
+
+void GUI::TextureModalWin::ImportTextureModalUpdate(ResourceManager* p_resource, Object* p_object, Mesh* p_mesh) noexcept
+{
+    if (m_open)
+    {
+        m_open = false;
+        if (!m_texturePaths.empty())
+            OpenTextureModal(p_mesh);
+    }
+
+    const ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    // Open texture import modal window
+    // Select the type to import the texture
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    if (ImGui::BeginPopupModal("Import Texture", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        const std::filesystem::path path{ m_texturePaths.front() };
+        ImGui::TextUnformatted(path.filename().string().c_str());
+        m_texTypeDropDown.Combo();
+        ImGui::Separator();
+        if (ImGui::Button("OK", ImVec2(120, 0)))
+        {
+            const auto tex = p_resource->LoadTexture(path.string().c_str());
+            auto* texture = p_resource->GetTexture(tex);
+            switch (m_texTypeDropDown.GetSelectedIndex())
+            {
+            case 1: p_mesh->material.t_metallic = texture; break;
+            case 2: p_mesh->material.t_roughness = texture; break;
+            case 3: p_mesh->material.t_ao = texture; break;
+            case 4: p_mesh->material.t_normal = texture; break;
+            default:p_mesh->material.t_albedo = texture; break;
+            }
+            m_texturePaths.pop(); m_open = true;
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SetItemDefaultFocus();
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel", ImVec2(120, 0)))
+        {
+            m_texturePaths.pop(); m_open = true;
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+
+    // If the mesh is not set or it is the root mesh,
+    //      apply the texture to all meshes
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    if (ImGui::BeginPopupModal("Import Texture To All Meshes", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        const std::filesystem::path path{ m_texturePaths.front() };
+        ImGui::TextUnformatted(path.filename().string().c_str());
+        m_texTypeDropDown.Combo();
+        ImGui::Separator();
+        if (ImGui::Button("OK", ImVec2(120, 0)))
+        {
+            const auto tex = p_resource->LoadTexture(path.string().c_str());
+            auto* texture = p_resource->GetTexture(tex);
+            auto& meshes = p_object->m_p_model->m_meshes;
+            switch (m_texTypeDropDown.GetSelectedIndex())
+            {
+            case 1:
+            {
+                for (std::size_t i = 1; i < meshes.size(); ++i)
+                    meshes[i].material.t_metallic = texture;
+            }
+            break;
+            case 2:
+            {
+                for (std::size_t i = 1; i < meshes.size(); ++i)
+                    meshes[i].material.t_roughness = texture;
+            }
+            break;
+            case 3:
+            {
+                for (std::size_t i = 1; i < meshes.size(); ++i)
+                    meshes[i].material.t_ao = texture;
+            }
+            break;
+            case 4:
+            {
+                for (std::size_t i = 1; i < meshes.size(); ++i)
+                    meshes[i].material.t_normal = texture;
+            }
+            break;
+            default:
+            {
+                for (std::size_t i = 1; i < meshes.size(); ++i)
+                    meshes[i].material.t_albedo = texture;
+            }
+            break;
+            }
+            m_texturePaths.pop(); m_open = true;
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SetItemDefaultFocus();
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel", ImVec2(120, 0)))
+        {
+            m_texturePaths.pop(); m_open = true;
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+}
+
+/*-----------------------------------------------------------------------------------------------*/
 
 void GUI::SetResourceManager(ResourceManager* resource) noexcept
 {
@@ -243,7 +370,8 @@ void GUI::Update() noexcept
     m_materialWin.Update(m_p_object);
     m_sceneWin.Update(m_p_object);
     m_meshWin.Update(m_p_object);
-    ImportTextureModalUpdate();
+    m_textureModalWin.Update(m_p_object);
+    m_textureModalWin.ImportTextureModalUpdate(m_p_resourceManager, m_p_object, m_materialWin.p_mesh);
 }
 
 Mesh* GUI::GetMesh() const noexcept
@@ -253,8 +381,8 @@ Mesh* GUI::GetMesh() const noexcept
 
 void GUI::ImportTexture(const std::filesystem::path& path) noexcept
 {
-    m_texturePaths.push(path);
-    OpenTextureModel();
+    m_textureModalWin.m_texturePaths.push(path);
+    m_textureModalWin.m_open = true;
 }
 
 void GUI::DockSpace() noexcept
@@ -299,123 +427,5 @@ void GUI::MainMenuBar() noexcept
     }
 }
 
-void GUI::OpenTextureModel() const noexcept
-{
-    if (m_materialWin.p_mesh != nullptr)
-    {
-        if (m_materialWin.p_mesh->parent == -1) // root
-            ImGui::OpenPopup("Import Texture To All Meshes");
-        else
-            ImGui::OpenPopup("Import Texture");
-    }
-    else
-        ImGui::OpenPopup("Import Texture To All Meshes");
-}
-
-void GUI::ImportTextureModalUpdate() noexcept
-{
-    static bool close = false;
-    if(close)
-    {
-        close = false;
-        if(!m_texturePaths.empty())
-            OpenTextureModel();
-    }
-
-    const ImVec2 center = ImGui::GetMainViewport()->GetCenter();
-    // Open texture import modal window
-    // Select the type to import the texture
-    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-    if (ImGui::BeginPopupModal("Import Texture", NULL, ImGuiWindowFlags_AlwaysAutoResize))
-    {
-        const std::filesystem::path path{ m_texturePaths.front() };
-        ImGui::TextUnformatted(path.filename().string().c_str());
-        m_texTypeDropDown.Combo();
-        ImGui::Separator();
-        if (ImGui::Button("OK", ImVec2(120, 0)))
-        {
-            const auto tex = m_p_resourceManager->LoadTexture(path.string().c_str());
-            const auto texture = m_p_resourceManager->GetTexture(tex);
-            switch (m_texTypeDropDown.GetSelectedIndex())
-            {
-            case 1: m_materialWin.p_mesh->material.t_metallic   = texture; break;
-            case 2: m_materialWin.p_mesh->material.t_roughness  = texture; break;
-            case 3: m_materialWin.p_mesh->material.t_ao         = texture; break;
-            case 4: m_materialWin.p_mesh->material.t_normal     = texture; break;
-            default:m_materialWin.p_mesh->material.t_albedo     = texture; break;
-            }
-            m_texturePaths.pop(); close = true;
-            ImGui::CloseCurrentPopup();
-        }
-        ImGui::SetItemDefaultFocus();
-        ImGui::SameLine();
-        if (ImGui::Button("Cancel", ImVec2(120, 0)))
-        {
-            m_texturePaths.pop(); close = true;
-            ImGui::CloseCurrentPopup();
-        }
-        ImGui::EndPopup();
-    }
-
-    // If the mesh is not set or it is the root mesh,
-    //      apply the texture to all meshes
-    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-    if(ImGui::BeginPopupModal("Import Texture To All Meshes", NULL, ImGuiWindowFlags_AlwaysAutoResize))
-    {
-        const std::filesystem::path path{ m_texturePaths.front() };
-        ImGui::TextUnformatted(path.filename().string().c_str());
-        m_texTypeDropDown.Combo();
-        ImGui::Separator();
-        if (ImGui::Button("OK", ImVec2(120, 0)))
-        {
-            const auto tex = m_p_resourceManager->LoadTexture(path.string().c_str());
-            const auto texture = m_p_resourceManager->GetTexture(tex);
-            auto meshes = m_p_object->m_p_model->m_meshes;
-            switch (m_texTypeDropDown.GetSelectedIndex())
-            {
-            case 1:
-	            {
-	                for (std::size_t i = 1; i < meshes.size(); ++i)
-	                    meshes[i].material.t_metallic = texture;
-	            }
-                break;
-            case 2:
-	            {
-	                for (std::size_t i = 1; i < meshes.size(); ++i)
-	                    meshes[i].material.t_roughness = texture;
-	            }
-                break;
-            case 3:
-	            {
-	                for (std::size_t i = 1; i < meshes.size(); ++i)
-	                    meshes[i].material.t_ao = texture;
-	            }
-                break;
-            case 4:
-	            {
-	                for (std::size_t i = 1; i < meshes.size(); ++i)
-	                    meshes[i].material.t_normal = texture;
-	            }
-                break;
-            default:
-	            {
-	                for (std::size_t i = 1; i < meshes.size(); ++i)
-	                    meshes[i].material.t_albedo = texture;
-	            }
-                break;
-            }
-            m_texturePaths.pop(); close = true;
-            ImGui::CloseCurrentPopup();
-        }
-        ImGui::SetItemDefaultFocus();
-        ImGui::SameLine();
-        if (ImGui::Button("Cancel", ImVec2(120, 0)))
-        {
-            m_texturePaths.pop(); close = true;
-            ImGui::CloseCurrentPopup();
-        }
-        ImGui::EndPopup();
-    }
-}
 
 /* GUI - end ------------------------------------------------------------------------------------*/
