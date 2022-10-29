@@ -5,6 +5,7 @@
  *	Desc		: ImGui contents
  */
 #pragma once
+#include <queue>	// std::queue
 #include "ResourceManager.h"
 
 class GUI
@@ -61,6 +62,7 @@ public:
 private:
 	void DockSpace() noexcept;
 	void MainMenuBar() noexcept;
+	void OpenTextureModel() const noexcept;
 	void ImportTextureModalUpdate() noexcept;
 	ResourceManager* m_p_resourceManager = nullptr;
 	Object* m_p_object = nullptr;
@@ -68,6 +70,6 @@ private:
 	SceneWin m_sceneWin;
 	MeshWin m_meshWin;
 	MaterialWin m_materialWin;
-	std::filesystem::path m_texturePath;
+	std::queue<std::filesystem::path> m_texturePaths;
 	DropDown m_texTypeDropDown;
 };
