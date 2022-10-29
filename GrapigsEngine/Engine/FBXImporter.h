@@ -37,6 +37,7 @@ struct Material
     Texture* t_ao = nullptr;
     Texture* t_normal = nullptr;
 };
+
 struct Mesh
 {
     std::string name{};
@@ -48,11 +49,11 @@ struct Mesh
     int index = 0;
 };
 
-class MeshGroup
+class Model
 {
 public:
-    MeshGroup() = default;
-    ~MeshGroup();
+    Model() = default;
+    ~Model();
     void InitBuffers(int largest_index) noexcept;
     void Clear() noexcept;
     void Draw(Primitive primitive, ShaderProgram* program) noexcept;
@@ -69,10 +70,10 @@ private:
 class FBXImporter
 {
 public:
-	static MeshGroup* Load(const char* file_path) noexcept;
+	static Model* Load(const char* file_path) noexcept;
 private:
     static FbxScene* ImportFbx(FbxManager* p_manager, const char* file_path) noexcept;
-	static MeshGroup* Parse(FbxNode* p_root) noexcept;
+	static Model* Parse(FbxNode* p_root) noexcept;
 	static int ParseNode(FbxNode* p_node, int parent, std::vector<Mesh>& meshes) noexcept;
 	static std::vector<Vertex> GetVertices( FbxMesh* p_mesh) noexcept;
     static std::size_t s_m_verticesCount;

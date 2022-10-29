@@ -63,7 +63,7 @@ private:
 	void MainMenuBar() noexcept;
 	void ImportTextureModalUpdate() noexcept;
 	ResourceManager* m_p_resourceManager = nullptr;
-	Object* p_object = nullptr;
+	Object* m_p_object = nullptr;
 	TransformWin m_transformWin;
 	SceneWin m_sceneWin;
 	MeshWin m_meshWin;

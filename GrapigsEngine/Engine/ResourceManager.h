@@ -29,9 +29,8 @@ struct Light
     glm::vec3 m_ambient = glm::vec3{ 0.9f,0.9f,0.95f }, m_diffuse = glm::vec3{ 1,1,1 }, m_specular = glm::vec3{ 1,1,1 };// for all lights
     float m_inner_angle = 0.33f, m_outer_angle = 0.65f, m_falloff = 0.35f;
     glm::vec3 m_attenuation = glm::vec3(0.0001f, 0.00005f, 0.000025f);
-
-
 };
+
 class Lights
 {
 public:
@@ -51,7 +50,7 @@ public:
     unsigned m_tag = 0;
     std::string m_name;
     ShaderProgram* m_p_shader = nullptr;
-    MeshGroup* m_p_mesh = nullptr;
+    Model* m_p_model = nullptr;
 
     glm::vec4 m_color = glm::vec4{1};
 
@@ -83,7 +82,7 @@ private:
     static FrameBufferObject* m_fbo;
     Object* m_object;
     std::map<unsigned, Texture*> m_textures;
-    std::map<unsigned, MeshGroup*> m_meshes;
+    std::map<unsigned, Model*> m_models;
     std::map<unsigned, ShaderProgram*> m_shaders;
 
 };

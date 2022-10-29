@@ -66,7 +66,7 @@ void Object::Draw(Primitive primitive) const noexcept
     m_p_shader->Use();
     m_p_shader->SendUniform("u_color", m_color);
     m_p_shader->SendUniform("u_modelToWorld", m_transform.GetTransformMatrix());
-    m_p_mesh->Draw(primitive, m_p_shader);
+    m_p_model->Draw(primitive, m_p_shader);
     m_p_shader->UnUse();
 }
 
@@ -90,9 +90,9 @@ ResourceManager::~ResourceManager()
 
 void ResourceManager::Clear() noexcept
 {
-    for (auto& m : m_meshes)
+    for (auto& m : m_models)
         delete m.second;
-    m_meshes.clear();
+    m_models.clear();
     for (auto& s : m_shaders)
         delete s.second;
     m_shaders.clear();
@@ -111,9 +111,9 @@ unsigned ResourceManager::LoadFbx(const char* path) noexcept
     const auto& mesh = FBXImporter::Load(path);
     if(mesh != nullptr)
     {
-	    const auto tag = static_cast<unsigned>(m_meshes.size());
+	    const auto tag = static_cast<unsigned>(m_models.size());
         const_cast<unsigned&>(mesh->m_tag) = tag;
-        m_meshes[tag] = mesh;
+        m_models[tag] = mesh;
 		return tag;
     }
     return ERROR_INDEX;
@@ -151,17 +151,15 @@ Texture* ResourceManager::GetTexture(const unsigned tag) noexcept
 
 Object* ResourceManager::CreateObject(unsigned mesh, unsigned shader, unsigned texture) noexcept
 {
-    if (m_object != nullptr)
-        delete m_object;
-
+    delete m_object;
     m_object = new Object();
-    if(m_meshes.contains(mesh))
-	    m_object->m_p_mesh = m_meshes[mesh];
+    if(m_models.contains(mesh))
+	    m_object->m_p_model = m_models[mesh];
     if(m_shaders.contains(shader))
 	    m_object->m_p_shader = m_shaders[shader];
     if (m_textures.contains(texture))
     {
-        for(auto& m: m_object->m_p_mesh->m_meshes)
+        for(auto& m: m_object->m_p_model->m_meshes)
             m.material.t_albedo = m_textures[texture];
     }
     return  m_object;

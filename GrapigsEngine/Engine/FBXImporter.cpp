@@ -6,20 +6,21 @@
  */
 #include "FBXImporter.h"
 
-#include <filesystem>	// std::filesystem
-#include <iostream>	// std::cerr
-#include <map>	// std::map
-#include <gl/glew.h>
+#include <filesystem>		// std::filesystem
+#include <iostream>			// std::cerr
+#include <map>				// std::map
+#include <gl/glew.h>		// gl	
 #include <glm/gtc/matrix_transform.hpp> // transform matrix calculation
-#include <sstream>	// strinstream
-#include "imgui.h"	// imgui
+#include <sstream>			// stringstream
 
-MeshGroup::~MeshGroup()
+ /* Model - start --------------------------------------------------------------------------------*/
+
+Model::~Model()
 {
 	Clear();
 }
 
-void MeshGroup::InitBuffers(int largest_index) noexcept
+void Model::InitBuffers(int largest_index) noexcept
 {
 	if (largest_index < 0)
 		return;
@@ -56,7 +57,7 @@ void MeshGroup::InitBuffers(int largest_index) noexcept
 	glBindVertexArray(0);
 }
 
-void MeshGroup::Clear() noexcept
+void Model::Clear() noexcept
 {
 	if(m_vao > 0)
 		glDeleteVertexArrays(1, &m_vao);
@@ -66,7 +67,7 @@ void MeshGroup::Clear() noexcept
 	m_vbo = 0;
 }
 
-void MeshGroup::Draw(Primitive primitive, ShaderProgram* program) noexcept
+void Model::Draw(Primitive primitive, ShaderProgram* program) noexcept
 {
 	if (m_vao)
 	{
@@ -76,7 +77,7 @@ void MeshGroup::Draw(Primitive primitive, ShaderProgram* program) noexcept
 	}
 }
 
-void MeshGroup::Draw(Primitive primitive, ShaderProgram* program, int index, glm::mat4 transform) const noexcept
+void Model::Draw(Primitive primitive, ShaderProgram* program, int index, glm::mat4 transform) const noexcept
 {
 	const auto& mesh = m_meshes[index];
 	const auto& vertex = mesh.vertices;
@@ -115,7 +116,7 @@ void MeshGroup::Draw(Primitive primitive, ShaderProgram* program, int index, glm
 	}
 }
 
-/* MeshGroup - end ------------------------------------------------------------------------------*/
+/* Model - end ----------------------------------------------------------------------------------*/
 /*-----------------------------------------------------------------------------------------------*/
 /* ParseHelper - start --------------------------------------------------------------------------*/
 
@@ -248,7 +249,7 @@ namespace ParseHelper
 std::size_t FBXImporter::s_m_verticesCount = 0;
 int FBXImporter::s_m_meshIndex = -1;
 
-MeshGroup* FBXImporter::Load(const char* file_path) noexcept
+Model* FBXImporter::Load(const char* file_path) noexcept
 {
 	const std::filesystem::path path(file_path);
 	if (std::filesystem::exists(file_path) == false)
@@ -276,12 +277,12 @@ MeshGroup* FBXImporter::Load(const char* file_path) noexcept
 	FbxNode* pRoot = p_scene->GetRootNode();
 	//FBXNodePrinter::Print(pRoot);
 
-	auto meshGroup = Parse(pRoot);
+	auto model = Parse(pRoot);
 
 	// Destroy the SDK manager and all the other objects is was handling
 	p_manager->Destroy();
 
-	return meshGroup;
+	return model;
 }
 
 FbxScene* FBXImporter::ImportFbx(FbxManager* p_manager, const char* file_path) noexcept
@@ -303,44 +304,44 @@ FbxScene* FBXImporter::ImportFbx(FbxManager* p_manager, const char* file_path) n
 	return scene;
 }
 
-MeshGroup* FBXImporter::Parse(FbxNode* p_root) noexcept
+Model* FBXImporter::Parse(FbxNode* p_root) noexcept
 {
-	MeshGroup* group = nullptr;
+	Model* model = nullptr;
 	s_m_meshIndex = -1;
 	s_m_verticesCount = 0;
 
 	if (p_root)
 	{
-		group = new MeshGroup();
+		model = new Model();
 		bool is_mesh_exist = false;
-		group->m_meshes.resize(1);
-		group->m_root = 0;
-		group->m_meshes[0].name = "Root";
+		model->m_meshes.resize(1);
+		model->m_root = 0;
+		model->m_meshes[0].name = "Root";
 
 		for (int i = 0; i < p_root->GetChildCount(); i++)
 		{
 			is_mesh_exist = true;
-			const int top = ParseNode(p_root->GetChild(i), -1, group->m_meshes);
-			group->m_meshes[0].children.push_back(top);
-			group->m_meshes[top].parent = 0;
+			const int top = ParseNode(p_root->GetChild(i), -1, model->m_meshes);
+			model->m_meshes[0].children.push_back(top);
+			model->m_meshes[top].parent = 0;
 		}
 
 		if(is_mesh_exist == false)
 		{
-			delete group;
-			group = nullptr;
+			delete model;
+			model = nullptr;
 		}
 		else
 		{
-			group->m_name = p_root->GetName();
-			group->InitBuffers(s_m_meshIndex);
+			model->m_name = p_root->GetName();
+			model->InitBuffers(s_m_meshIndex);
 		}
 	}
 
-	for (int i = 0; i < static_cast<int>(group->m_meshes.size()); ++i)
-		group->m_meshes[i].index = i;
+	for (int i = 0; i < static_cast<int>(model->m_meshes.size()); ++i)
+		model->m_meshes[i].index = i;
 
-	return group;
+	return model;
 }
 
 int FBXImporter::ParseNode(FbxNode* p_node, int parent, std::vector<Mesh>& meshes) noexcept
