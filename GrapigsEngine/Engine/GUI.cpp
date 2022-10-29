@@ -204,9 +204,6 @@ void GUI::MaterialWin::Content(Object* object)
             Material& m = p_mesh->material;
             ImGui::SliderFloat("Metallic", &m.metallic, 0, 1, "%.2f");
             ImGui::SliderFloat("Roughness", &m.roughness, 0, 1, "%.2f");
-            ImGui::SliderFloat("Ambient", &m.ambient, 0, 1, "%.2f");
-            ImGui::SliderFloat("Diffuse", &m.diffuse, 0, 1, "%.2f");
-            ImGui::SliderFloat("Specular", &m.specular, 0, 1, "%.2f");
         }
     }
     ImGui::End();
@@ -219,6 +216,7 @@ GUI::GUI() noexcept
     m_texTypeDropDown.AddData("Metalness");
     m_texTypeDropDown.AddData("Roughness");
     m_texTypeDropDown.AddData("Ambient Occlusion");
+    m_texTypeDropDown.AddData("Normal Map");
 }
 
 void GUI::SetResourceManager(ResourceManager* resource) noexcept
@@ -329,6 +327,9 @@ void GUI::ImportTextureModalUpdate() noexcept
                 break;
             case 3:
                 m_materialWin.p_mesh->material.t_ao = m_p_resourceManager->GetTexture(tex);
+                break;
+            case 4:
+                m_materialWin.p_mesh->material.t_normal = m_p_resourceManager->GetTexture(tex);
                 break;
             default:
                 m_materialWin.p_mesh->material.t_albedo = m_p_resourceManager->GetTexture(tex);

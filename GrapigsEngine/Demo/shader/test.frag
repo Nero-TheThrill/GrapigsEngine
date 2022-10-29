@@ -5,15 +5,24 @@ layout (location=1) in vec3 position;
 layout (location=2) in vec2 texcoord;
 layout (location=0) out vec4 output_color;
 
-uniform vec4 u_color;
-uniform float o_ambient;
-uniform float o_diffuse;
-uniform float o_specular;
-uniform float o_metallic;
-uniform float o_roughness;
-uniform sampler2D o_albedo;
 
-vec3 I_a, I_d, I_s;
+
+uniform vec3 u_albedo;
+uniform float u_metallic;
+uniform float u_roughness;
+
+uniform bool u_has_albedo;
+uniform sampler2D t_albedo;
+
+uniform bool u_has_metallic;
+uniform sampler2D t_metallic;
+
+uniform bool u_has_roughness;
+uniform sampler2D t_roughness;
+
+uniform bool u_has_ao;
+uniform sampler2D t_ao;
+
 const float PI = 3.141592654;
 
 layout (std140, binding=0) uniform Transform
@@ -75,10 +84,22 @@ vec3 fresnelSchlick(float HdotV, vec3 baseReflectivity)
 
 vec3 CalculateFinalColor()
 {
-	vec3 albedo = texture2D(o_albedo, texcoord).xyz;
+	vec3 albedo = u_albedo;
+	if(u_has_albedo)
+		albedo = texture2D(t_albedo, texcoord).xyz;
+	float metallic = u_metallic;
+	if(u_has_metallic)
+		metallic = texture2D(t_metallic, texcoord).x;
+	float roughness = u_roughness;
+	if(u_has_roughness)
+		roughness = texture2D(t_roughness, texcoord).x;
+	float ao = u_roughness;
+	if(u_has_ao)
+		ao = texture2D(t_ao, texcoord).x;
+
 	vec3 finalColor = vec3(0);
 	vec3 viewDirection = normalize(u_trans.camPosition - position);
-	vec3 baseReflectivity = mix(vec3(0.04), albedo, o_metallic);
+	vec3 baseReflectivity = mix(vec3(0.04), albedo, metallic);
 	for(uint i=0; i < lightInfo.lightNum; i++) 
 	{	
 		Light light = lightInfo.lights[i];
@@ -93,13 +114,13 @@ vec3 CalculateFinalColor()
 	    float HdotV = max(dot(halfwayVector, viewDirection),0.0);
 		float NdotH = max(dot(normal, halfwayVector),0.0);
 
-		float D = distributionGGX(NdotH, o_roughness);
-		float G = geometrySmith(NdotV, NdotL, o_roughness);
+		float D = distributionGGX(NdotH, roughness);
+		float G = geometrySmith(NdotV, NdotL, roughness);
 		vec3 F = fresnelSchlick(HdotV, baseReflectivity);
 		vec3 specular = D * G * F;
 		specular /= 4.0 * NdotV * NdotL;
 		vec3 kD = vec3(1.0) - F;
-		kD *= 1.0 - o_metallic;
+		kD *= 1.0 - metallic;
 
 		switch(light.type)
 		{
@@ -131,9 +152,9 @@ vec3 CalculateFinalColor()
 
 	    finalColor += (kD * albedo / PI + specular) * radiance * NdotL;
 	}
-	//finalColor += objcolor * vec3(0.15);
-	//finalColor = finalColor/(finalColor+vec3(1.0));
-	//finalColor = pow(finalColor, vec3(1.0/2.2)); 
+	finalColor += ao * albedo * vec3(0.03);
+	finalColor = finalColor/(finalColor+vec3(1.0));
+	finalColor = pow(finalColor, vec3(1.0/2.2)); 
 	return finalColor;
 }
 

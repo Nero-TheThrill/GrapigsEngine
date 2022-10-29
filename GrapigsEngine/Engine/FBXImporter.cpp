@@ -84,13 +84,27 @@ void MeshGroup::Draw(Primitive primitive, ShaderProgram* program, int index, glm
 	if (vertex.empty() == false)
 	{
 		program->SendUniform("u_localToModel", mesh.transform);
+
+		program->SendUniform("u_has_albedo", mesh.material.t_albedo!=nullptr);
+		program->SendUniform("u_has_metallic", mesh.material.t_metallic != nullptr);
+		program->SendUniform("u_has_roughness", mesh.material.t_roughness != nullptr);
+		program->SendUniform("u_has_ao", mesh.material.t_ao != nullptr);
+		program->SendUniform("u_has_normalmap", mesh.material.t_normal != nullptr);
+
 		if (mesh.material.t_albedo)
-			program->SendUniform("o_albedo", mesh.material.t_albedo->Unit());
-		program->SendUniform("o_ambient", mesh.material.ambient);
-		program->SendUniform("o_diffuse", mesh.material.diffuse);
-		program->SendUniform("o_specular", mesh.material.specular);
-		program->SendUniform("o_metallic", mesh.material.metallic);
-		program->SendUniform("o_roughness", mesh.material.roughness);
+			program->SendUniform("t_albedo", mesh.material.t_albedo->Unit());
+		if (mesh.material.t_metallic)
+			program->SendUniform("t_metallic", mesh.material.t_metallic->Unit());
+	    if (mesh.material.t_roughness)
+			program->SendUniform("t_roughness", mesh.material.t_roughness->Unit());
+		if (mesh.material.t_ao)
+			program->SendUniform("t_ao", mesh.material.t_ao->Unit());
+		if (mesh.material.t_normal)
+			program->SendUniform("t_normal", mesh.material.t_normal->Unit());
+
+		program->SendUniform("u_metallic", mesh.material.metallic);
+		program->SendUniform("u_roughness", mesh.material.roughness);
+		program->SendUniform("u_albedo", mesh.material.albedo);
 		glNamedBufferSubData(m_vbo, 0, static_cast<GLsizeiptr>(sizeof(Vertex) * vertex.size()), vertex.data());
 		glDrawArrays(static_cast<GLenum>(primitive), 0, static_cast<GLsizei>(vertex.size()));
 	}

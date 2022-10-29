@@ -22,9 +22,19 @@ layout (std140, binding=0) uniform Transform
 uniform mat4 u_modelToWorld;
 uniform mat4 u_localToModel;
 
+uniform bool u_has_normalmap;
+uniform sampler2D t_normal;
+
 void main()
 {
-    normal = vec4(normalize(u_modelToWorld * u_localToModel * vNormal)).xyz;
+    if(false)//u_has_normalmap)
+    {   //TODO: normalmapping
+        //normal = normalize(  u_modelToWorld * u_localToModel * ((texture2D(t_normal, vTexCoord))*vec4(2.0)-vec4(1.0)) ).xyz;
+    }
+    else
+    {
+        normal = vec4(normalize(u_modelToWorld * u_localToModel * vNormal)).xyz;
+    }
     vec4 pos = u_modelToWorld * u_localToModel * vPosition;
 	position = pos.xyz;
     texcoord = vTexCoord;
