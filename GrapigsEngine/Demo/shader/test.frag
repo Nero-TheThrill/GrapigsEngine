@@ -5,7 +5,8 @@ layout (location=1) in vec3 position;
 layout (location=2) in vec2 texcoord;
 layout (location=0) out vec4 output_color;
 
-
+uniform samplerCube t_ibl;
+uniform sampler2D t_brdflut;
 
 uniform vec3 u_albedo;
 uniform float u_metallic;
