@@ -50,7 +50,7 @@
       <WarningLevel>Level4</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <TreatWarningAsError>false</TreatWarningAsError>
+      <TreatWarningAsError>true</TreatWarningAsError>
       <AdditionalIncludeDirectories>$(SolutionDir)third_party\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -83,6 +83,7 @@
     <ClInclude Include="Camera.h" />
     <ClInclude Include="FBXImporter.h" />
     <ClInclude Include="GUI.h" />
+    <ClInclude Include="GUIWindow.h" />
     <ClInclude Include="Input.h" />
     <ClInclude Include="ResourceManager.h" />
     <ClInclude Include="Shader.h" />
@@ -93,6 +94,7 @@
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="FBXImporter.cpp" />
     <ClCompile Include="GUI.cpp" />
+    <ClCompile Include="GUIWindow.cpp" />
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="ResourceManager.cpp" />
     <ClCompile Include="Shader.cpp" />

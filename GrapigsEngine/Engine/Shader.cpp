@@ -396,7 +396,7 @@ void FrameBufferObject::Init(int width, int height) noexcept
 	{
 		std::cout << "[Frame Buffer Object]: Frame Buffer isn't complete" << std::endl;
 	}
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, unit);
 }
 
 void FrameBufferObject::Clear() noexcept

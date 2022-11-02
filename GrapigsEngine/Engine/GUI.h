@@ -5,86 +5,27 @@
  *	Desc		: ImGui contents
  */
 #pragma once
-#include <queue>	// std::queue
-#include <set>      // std::set
-#include "ResourceManager.h"
+#include "GUIWindow.h"	// GUIWindow::
 
 class GUI
 {
-	class DropDown
-	{
-	public:
-		DropDown() = delete;
-		DropDown(const std::string& label) noexcept;
-		void ClearData() noexcept;
-		void AddData(const char* datum) noexcept;
-		bool Combo() noexcept;
-		[[nodiscard]] int GetSelectedIndex() const noexcept;
-		[[nodiscard]] std::string GetSelectedString() const noexcept;
-	private:
-		std::string m_label{};
-		int m_selected = 0;
-		int m_dataSize = 0;
-		std::vector<const char*> m_data;
-	};
-
-	struct Window
-	{
-		void Update(Object* object);
-		virtual void Content([[maybe_unused]] Object* object) = 0;
-		bool m_open = true;
-	};
-	struct TransformWin final : Window
-	{
-		void Content([[maybe_unused]] Object* object) override;
-		glm::vec3 m_pos{ 0 }, m_rot{ 0 }, m_scl{ 1 };
-		float m_uscl = 1, m_prevScl = 1;
-	};
-	struct SceneWin final : Window { void Content([[maybe_unused]] Object* object) override; };
-	struct MeshWin final : Window
-	{
-		void Content([[maybe_unused]] Object* object) override;
-		void RecursiveMesh(Object* p_object, Mesh* p_mesh) noexcept;
-	};
-	struct MaterialWin final : Window
-	{
-		void Content([[maybe_unused]] Object* object) override;
-		std::string m_notice;
-		Mesh* p_mesh = nullptr;
-	};
-	struct LoadedWin final : Window
-	{
-		LoadedWin() noexcept;
-		void Content([[maybe_unused]] Object* object) override;
-		void AddModelData(const Model* p_model) noexcept;
-		void AddTextureData(const Texture* p_texture) noexcept;
-		DropDown m_modelDD, m_textureDD;
-		std::set<unsigned> m_modelTags, m_textureTags;
-	};
-	struct TextureModalWin final : Window
-	{
-		TextureModalWin() noexcept;
-		void Content([[maybe_unused]] Object* object) override;
-		void OpenTextureModal(const Mesh* p_mesh) const noexcept;
-		void ImportTextureModalUpdate(ResourceManager* p_resource, Object* p_object, Mesh* p_mesh, LoadedWin* loaded_win) noexcept;
-		std::queue<std::filesystem::path> m_texturePaths;
-		DropDown m_texTypeDropDown;
-	};
 public:
-	void SetResourceManager(ResourceManager* resource) noexcept;
+	GUI(ResourceManager* p_resourceManager) noexcept;
 	void SetObject(Object* object) noexcept;
 	void Update() noexcept;
-	Mesh* GetMesh() const noexcept;
+
+	[[nodiscard]] Mesh* GetMesh() const noexcept;
 	void ImportTexture(const std::filesystem::path& path) noexcept;
 private:
 	void DockSpace() noexcept;
 	void MainMenuBar() noexcept;
-	ResourceManager* m_p_resourceManager = nullptr;
-	Object* m_p_object = nullptr;
-	TransformWin m_transformWin;
-	SceneWin m_sceneWin;
-	MeshWin m_meshWin;
-	MaterialWin m_materialWin;
-	TextureModalWin m_textureModalWin;
-	LoadedWin m_loadedWin;
+	ResourceManager* m_p_resourceManager;
+	Object* m_p_object;
+
+	GUIWindow::Transform m_transformWin;
+	GUIWindow::Material m_materialWin;
+	GUIWindow::Scene m_sceneWin;
+	GUIWindow::Mesh m_meshWin;
+	GUIWindow::TextureModal m_textureModal;
+	GUIWindow::Asset m_assetWin;
 };

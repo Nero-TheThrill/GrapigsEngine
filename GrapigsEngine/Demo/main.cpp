@@ -60,8 +60,7 @@ int main(void)
 	Application application(1200, 900);
 	Application::SetBackgroundColor(255, 255, 255);
 	ResourceManager resource;
-	GUI gui;
-	gui.SetResourceManager(&resource);
+	GUI gui(&resource);
 	Lights* lights = CreateLights();
 
 	Object* obj = CreateObject(&resource);

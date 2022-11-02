@@ -78,8 +78,8 @@ public:
     void DrawLines() const noexcept;
     void DrawTriangles() const noexcept;
 
-private:
     static FrameBufferObject* m_fbo;
+private:
     Object* m_object;
     std::map<unsigned, Texture*> m_textures;
     std::map<unsigned, Model*> m_models;

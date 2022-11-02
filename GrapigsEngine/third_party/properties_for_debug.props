@@ -18,7 +18,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;GLFW_DLL;_CRT_SECURE_NO_WARNINGS;FBXSDK_SHARED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>opengl32.lib;glew32d.lib;glfw3dll.lib;imguid.lib;libfbxsdk.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;glew32d.lib;glfw3dll.lib;imguid.lib;libfbxsdk.lib;imguizmod.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>xcopy /y /d "$(SolutionDir)third_party\bin\$(Configuration)\*.dll" "$(TargetDir)"

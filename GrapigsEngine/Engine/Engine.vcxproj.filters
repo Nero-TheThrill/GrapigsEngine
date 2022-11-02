@@ -16,6 +16,9 @@
     <Filter Include="Windows\ResourceManager\Shader">
       <UniqueIdentifier>{f9232e91-fc28-44dd-96b7-09fcf4e3cdee}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Windows\UI">
+      <UniqueIdentifier>{b2f69eb9-b84f-43c5-aebc-a4fe9a7e48f3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ResourceManager.h">
@@ -40,7 +43,10 @@
       <Filter>Windows\ResourceManager\Shader</Filter>
     </ClInclude>
     <ClInclude Include="GUI.h">
-      <Filter>Windows\Application</Filter>
+      <Filter>Windows\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="GUIWindow.h">
+      <Filter>Windows\UI</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -66,7 +72,10 @@
       <Filter>Windows\ResourceManager\Shader</Filter>
     </ClCompile>
     <ClCompile Include="GUI.cpp">
-      <Filter>Windows\Application</Filter>
+      <Filter>Windows\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="GUIWindow.cpp">
+      <Filter>Windows\UI</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

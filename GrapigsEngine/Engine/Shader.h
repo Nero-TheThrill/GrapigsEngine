@@ -98,5 +98,6 @@ public:
 
 	[[nodiscard]] unsigned GetTexture() const noexcept;
 private:
+	const unsigned unit = 0;
 	unsigned m_fboHandle, m_rboHandle, m_texture;
 };
