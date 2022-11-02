@@ -6,10 +6,9 @@
  */
 #include "ResourceManager.h"
 
+#include <iostream>
 #include "Input.h"
 
-#include <iostream>
-#include <stb_image.h>	// load png
  /* Light - start --------------------------------------------------------------------------------*/
 
 Lights::Lights() noexcept
@@ -63,17 +62,18 @@ void Lights::AddLight(Light light)
 /*-----------------------------------------------------------------------------------------------*/
 /* Object - start -------------------------------------------------------------------------------*/
 
-void Object::Draw(Primitive primitive, unsigned IBL) const noexcept
+void Object::Draw(Primitive primitive, const std::map<TextureType, unsigned>& textures) const noexcept
 {
     m_p_shader->Use();
-    
-    m_p_shader->SendUniform("t_ibl", 55);
-    m_p_shader->SendUniform("t_brdflut", 56);
+
+    m_p_shader->SendUniform("t_ibl", textures.find(TextureType::IBL)->second);
+    m_p_shader->SendUniform("t_brdflut", textures.find(TextureType::BRDF)->second);
     m_p_shader->SendUniform("u_color", m_color);
     m_p_shader->SendUniform("u_modelToWorld", m_transform.GetTransformMatrix());
     m_p_model->Draw(primitive, m_p_shader);
     m_p_shader->UnUse();
 }
+
 
 /* Object - end ---------------------------------------------------------------------------------*/
 /*-----------------------------------------------------------------------------------------------*/
@@ -82,70 +82,21 @@ void Object::Draw(Primitive primitive, unsigned IBL) const noexcept
 FrameBufferObject* ResourceManager::m_fbo = new FrameBufferObject();
 
 ResourceManager::ResourceManager() :
-	m_object(nullptr)
-{
-    const glm::ivec2& size = Input::s_m_windowSize;
-    m_fbo->Init(size.x, size.y);
-    glGenTextures(1, &m_cubemap);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, m_cubemap);
-    int width, height, nrChannels;
-    std::vector<std::string> cubemap_paths
-    {
+    m_object(nullptr),
+    m_cubemap({
         "texture/skybox/right.jpg",
         "texture/skybox/left.jpg",
         "texture/skybox/top.jpg",
         "texture/skybox/bottom.jpg",
         "texture/skybox/front.jpg",
-        "texture/skybox/back.jpg"
-    };
+        "texture/skybox/back.jpg" }),
+    m_brdf("texture/brdf.png")
+{
+    const glm::ivec2& size = Input::s_m_windowSize;
+    m_fbo->Init(size.x, size.y);
 
-    for (unsigned int i = 0; i < cubemap_paths.size(); i++)
-    {
-        unsigned char* data = stbi_load(cubemap_paths[i].c_str(), &width, &height, &nrChannels, 0);
-        if (data)
-        {
-            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-            stbi_image_free(data);
-        }
-        else
-        {
-            std::cout << "failed to load: " << cubemap_paths[i] << std::endl;
-            stbi_image_free(data);
-        }
-    }
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
-    glBindTextureUnit(55, m_cubemap);
-
-
-    stbi_set_flip_vertically_on_load(true);
-    int channels;
-    unsigned char* data = stbi_load("texture/brdf.png", &width, &height, &channels, 0);
-    if (data == nullptr)
-    {
-        std::cout << "[Texture] Error: Unable to load texture/brdf.png" << std::endl;
-        return;
-    }
-
-    const GLenum sized_internal_format = (channels == 4) ? GL_RGBA8 : GL_RGB8;
-    const GLenum base_internal_format = (channels == 4) ? GL_RGBA : GL_RGB;
-
-    if (!m_brdf)
-        glCreateTextures(GL_TEXTURE_2D, 1, &m_brdf);
-    glTextureStorage2D(m_brdf, 1, sized_internal_format, width, height);
-    glTextureSubImage2D(m_brdf, 0, 0, 0, width, height, base_internal_format, GL_UNSIGNED_BYTE, data);
-    stbi_image_free(data);
-
-    glTextureParameteri(m_brdf, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTextureParameteri(m_brdf, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTextureParameteri(m_brdf, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTextureParameteri(m_brdf, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glBindTextureUnit(56, m_brdf);
-
+    m_texUnit[TextureType::IBL] = m_cubemap.Unit();
+    m_texUnit[TextureType::BRDF] = m_brdf.Unit();
 }
 
 ResourceManager::~ResourceManager()
@@ -264,13 +215,13 @@ Object* ResourceManager::CreateObject(const char* path) noexcept
 
 void ResourceManager::DrawLines() const noexcept
 {
-    m_object->Draw(Primitive::LineLoop, m_cubemap);
+    m_object->Draw(Primitive::LineLoop, m_texUnit);
 }
 
 void ResourceManager::DrawTriangles() const noexcept
 {
     m_fbo->Bind();
-    m_object->Draw(Primitive::Triangles, m_cubemap);
+    m_object->Draw(Primitive::Triangles, m_texUnit);
     m_fbo->UnBind();
 }
 

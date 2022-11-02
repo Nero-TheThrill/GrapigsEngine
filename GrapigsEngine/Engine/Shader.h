@@ -10,7 +10,7 @@
 #include <filesystem>	// std::filesystem::path
 #include <map>			// std::map
 #include <glm/glm.hpp>	// glm
-
+	
 
 enum class ShaderType
 {
@@ -67,10 +67,15 @@ private:
 	mutable std::map<std::string, int> uniforms;
 };
 
+enum class TextureType
+{
+	Default = 0, IBL, BRDF
+};
+
 class Texture
 {
 public:
-	Texture(const char* file_path) noexcept;
+	Texture(const char* file_path, bool is_2d_texture = true) noexcept;
 	~Texture() noexcept;
 
 	[[nodiscard]] unsigned Unit() const noexcept;
@@ -87,7 +92,10 @@ protected:
 
 class CubeMapTexture final : public Texture
 {
-	CubeMapTexture(const char* file_path) noexcept;
+public:
+	CubeMapTexture(std::vector<std::filesystem::path> file_path) noexcept;
+private:
+	const std::vector<std::filesystem::path> m_paths;
 };
 
 class FrameBufferObject

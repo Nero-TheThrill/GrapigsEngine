@@ -51,12 +51,10 @@ public:
     std::string m_name;
     ShaderProgram* m_p_shader = nullptr;
     Model* m_p_model = nullptr;
-
     glm::vec4 m_color = glm::vec4{1};
 
-    void Draw(Primitive primitive, unsigned IBL) const noexcept;
+    void Draw(Primitive primitive, const std::map<TextureType, unsigned>& textures) const noexcept;
 };
-
 
 class ResourceManager
 {
@@ -83,7 +81,7 @@ private:
     std::map<unsigned, Texture*> m_textures;
     std::map<unsigned, Model*> m_models;
     std::map<unsigned, ShaderProgram*> m_shaders;
-    unsigned m_cubemap=0, m_brdf=0;
-
+    CubeMapTexture m_cubemap;
+    Texture m_brdf;
+    std::map<TextureType, unsigned> m_texUnit;
 };
-

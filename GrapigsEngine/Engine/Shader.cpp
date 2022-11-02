@@ -316,35 +316,38 @@ void ShaderProgram::PrintActiveUniforms() const noexcept
 
 unsigned Texture::s_textureCount = 1;
 
-Texture::Texture(const char* file_path) noexcept
+Texture::Texture(const char* file_path, bool is_2d_texture) noexcept
 	: m_initialized(false), m_name(std::filesystem::path{ file_path }.filename().string()), m_path(file_path)
 {
-	stbi_set_flip_vertically_on_load(true);
-	int width, height, channels;
-	unsigned char* data = stbi_load(m_path.string().c_str(), &width, &height, &channels, 0);
-	if (data == nullptr)
+	if(is_2d_texture)
 	{
-		std::cout << "[Texture] Error: Unable to load " << m_path << std::endl;
-		return;
+		stbi_set_flip_vertically_on_load(true);
+		int width, height, channels;
+		unsigned char* data = stbi_load(m_path.string().c_str(), &width, &height, &channels, 0);
+		if (data == nullptr)
+		{
+			std::cout << "[Texture] Error: Unable to load " << m_path << std::endl;
+			return;
+		}
+
+		const GLenum sized_internal_format = (channels == 4) ? GL_RGBA8 : GL_RGB8;
+		const GLenum base_internal_format = (channels == 4) ? GL_RGBA : GL_RGB;
+
+		if (!m_handle)
+			glCreateTextures(GL_TEXTURE_2D, 1, &m_handle);
+		glTextureStorage2D(m_handle, 1, sized_internal_format, width, height);
+		glTextureSubImage2D(m_handle, 0, 0, 0, width, height, base_internal_format, GL_UNSIGNED_BYTE, data);
+		stbi_image_free(data);
+
+		glTextureParameteri(m_handle, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTextureParameteri(m_handle, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTextureParameteri(m_handle, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTextureParameteri(m_handle, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+		m_unit = s_textureCount++;
+		glBindTextureUnit(m_unit, m_handle);
+		const_cast<bool&>(m_initialized) = true;
 	}
-
-	const GLenum sized_internal_format = (channels == 4) ? GL_RGBA8 : GL_RGB8;
-	const GLenum base_internal_format = (channels == 4) ? GL_RGBA : GL_RGB;
-
-	if (!m_handle)
-		glCreateTextures(GL_TEXTURE_2D, 1, &m_handle);
-	glTextureStorage2D(m_handle, 1, sized_internal_format, width, height);
-	glTextureSubImage2D(m_handle, 0, 0, 0, width, height, base_internal_format, GL_UNSIGNED_BYTE, data);
-	stbi_image_free(data);
-
-	glTextureParameteri(m_handle, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTextureParameteri(m_handle, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTextureParameteri(m_handle, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTextureParameteri(m_handle, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-	m_unit = s_textureCount++;
-	glBindTextureUnit(m_unit, m_handle);
-	const_cast<bool&>(m_initialized) = true;
 }
 
 Texture::~Texture() noexcept
@@ -359,6 +362,32 @@ unsigned Texture::Unit() const noexcept
 	return m_unit;
 }
 
+
+CubeMapTexture::CubeMapTexture(std::vector<std::filesystem::path> file_path) noexcept
+	: Texture("cube-map", false)
+{
+	glGenTextures(1, &m_handle);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, m_handle);
+	int width, height, nrChannels;
+	for (unsigned int i = 0; i < file_path.size(); i++)
+	{
+		unsigned char* data = stbi_load(file_path[i].string().c_str(), &width, &height, &nrChannels, 0);
+		if (data)
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+		else
+			std::cout << "[CubeMapTexture] Error: Unable to load " << file_path[i] << std::endl;
+		stbi_image_free(data);
+	}
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+	m_unit = s_textureCount++;
+	glBindTextureUnit(m_unit, m_handle);
+	const_cast<bool&>(m_initialized) = true;
+}
 
 FrameBufferObject::FrameBufferObject() 
 	: m_fboHandle(0), m_rboHandle(0), m_texture(0)

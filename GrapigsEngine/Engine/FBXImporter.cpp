@@ -137,19 +137,14 @@ std::ostream& operator<<(std::ostream& os, const FbxDouble3& val)
 
 namespace ParseHelper
 {
-	glm::mat4 GetTransformMatrix(FbxNode* p_node) noexcept
+	glm::mat4 GetLocalTransform(const glm::vec3& translation, const glm::vec3& rotation, const glm::vec3& scaling) noexcept
 	{
-		const auto& translation = p_node->LclTranslation.Get();
-		const auto& rotation = p_node->LclRotation.Get();
-		const auto& scaling = p_node->LclScaling.Get();
-
 		glm::mat4 transform{ 1 };
-		transform = glm::translate(transform, glm::vec3{ translation[0], translation[1], translation[2] } * 0.01f);
-		transform = glm::rotate(transform, glm::radians(static_cast<float>(rotation[0])), glm::vec3{ 1, 0, 0 });
-		transform = glm::rotate(transform, glm::radians(static_cast<float>(rotation[1])), glm::vec3{ 0, 1, 0 });
-		transform = glm::rotate(transform, glm::radians(static_cast<float>(rotation[2])), glm::vec3{ 0, 0, 1 });
-		transform = glm::scale(transform, glm::vec3{ scaling[0], scaling[1], scaling[2] }  * 0.01f);
-
+		transform = glm::translate(transform, translation);
+		transform = glm::rotate(transform, glm::radians(rotation.x), glm::vec3{ 1, 0, 0 });
+		transform = glm::rotate(transform, glm::radians(rotation.y), glm::vec3{ 0, 1, 0 });
+		transform = glm::rotate(transform, glm::radians(rotation.z), glm::vec3{ 0, 0, 1 });
+		transform = glm::scale(transform, scaling);
 		return transform;
 	}
 
@@ -244,6 +239,22 @@ namespace ParseHelper
 	{
 		return "(" + ToString(vec3.mData[0]) + ", " + ToString(vec3.mData[1]) + ", " + ToString(vec3.mData[2]) + ")";
 	}
+
+	glm::mat4 ToMat4(FbxAMatrix mat)
+	{
+		glm::mat4 r;
+		for(int row = 0; row < 4; ++row)
+		{
+			for (int col = 0; col < 4; ++col)
+				r[row][col] = static_cast<float>(mat[row][col]);
+		}
+		return r;
+	}
+
+	glm::vec3 ToVec3(FbxDouble3 vec)
+	{
+		return glm::vec3{ vec[0], vec[1], vec[2] };
+	}
 }
 
 
@@ -254,6 +265,10 @@ namespace ParseHelper
 std::filesystem::path FBXImporter::s_path{ "" };
 std::size_t FBXImporter::s_m_verticesCount = 0;
 int FBXImporter::s_m_meshIndex = -1;
+glm::vec3 FBXImporter::max{ std::numeric_limits<float>::min() };
+glm::vec3 FBXImporter::min{ std::numeric_limits<float>::max() };
+glm::vec4 FBXImporter::sum{ 0};
+glm::mat4 FBXImporter::globalTransform{ 1 };
 
 Model* FBXImporter::Load(const char* file_path) noexcept
 {
@@ -315,6 +330,10 @@ Model* FBXImporter::Parse(FbxNode* p_root) noexcept
 	Model* model = nullptr;
 	s_m_meshIndex = -1;
 	s_m_verticesCount = 0;
+	max = glm::vec3{ std::numeric_limits<float>::min() };
+	min = glm::vec3{ std::numeric_limits<float>::max() };
+	sum = glm::vec4{ 0 };
+	globalTransform = glm::mat4{ 1 };
 
 	if (p_root)
 	{
@@ -344,8 +363,21 @@ Model* FBXImporter::Parse(FbxNode* p_root) noexcept
 		}
 	}
 
-	for (int i = 0; i < static_cast<int>(model->m_meshes.size()); ++i)
-		model->m_meshes[i].index = i;
+	// Normalize vertex position
+	const glm::vec3 center{ sum.x / sum.w, sum.y / sum.w, sum.z / sum.w };
+	const glm::vec3 size = abs(max - min);
+	const float scale = 1.f / std::max(size.x, std::max(size.y, size.z));
+
+	int index = 0;
+	for (auto& m : model->m_meshes)
+	{
+		m.index = index++;
+		m.translation -= center;
+		m.translation *= scale;
+		m.scaling *= scale;
+		m.transform = ParseHelper::GetLocalTransform(m.translation, m.rotation, m.scaling);
+	}
+	model->m_meshes.front().transform = glm::mat4{ 1 };
 
 	return model;
 }
@@ -356,6 +388,7 @@ int FBXImporter::ParseNode(FbxNode* p_node, int parent, std::vector<Mesh>& meshe
 	meshes.emplace_back(Mesh());
 	Mesh mesh{};
 	mesh.name = p_node->GetName();
+	globalTransform = ParseHelper::ToMat4(p_node->EvaluateGlobalTransform());
 
 	for (int i = 0; i < p_node->GetNodeAttributeCount(); i++)
 	{
@@ -381,7 +414,11 @@ int FBXImporter::ParseNode(FbxNode* p_node, int parent, std::vector<Mesh>& meshe
 		}
 	}
 
-	mesh.transform = ParseHelper::GetTransformMatrix(p_node);
+	mesh.transform = ParseHelper::ToMat4(p_node->EvaluateLocalTransform());
+	mesh.translation = ParseHelper::ToVec3(p_node->LclTranslation);
+	mesh.rotation = ParseHelper::ToVec3(p_node->LclRotation);
+	mesh.scaling = ParseHelper::ToVec3(p_node->LclScaling);
+
 	// Set parent/children
 	mesh.parent = parent;
 	// Read transform data
@@ -402,11 +439,14 @@ std::vector<Vertex> FBXImporter::GetVertices(FbxMesh* p_mesh) noexcept
 	std::vector<int> indices;
 	std::map<int, glm::vec4> vertex_normal;
 	std::vector<glm::vec2> texture_coordinate=ParseHelper::LoadUVInformation(p_mesh);
-	int cnt= p_mesh->GetControlPointsCount();
-	for (int vert = 0; vert < cnt; ++vert)
+
+	for (int vert = 0; vert < p_mesh->GetControlPointsCount(); ++vert)
 	{
 		const auto& pos = p_mesh->GetControlPointAt(vert);
-		ctrl_pts.emplace_back(glm::vec3{ pos[0], pos[1], pos[2] });
+		const glm::vec3 vertex{ pos[0], pos[1], pos[2] };
+		ctrl_pts.emplace_back(vertex);
+		const auto global = globalTransform * glm::vec4{ vertex, 1 };
+		SetRange(global.x, global.y, global.z);
 	}
 
 	for (int poly = 0; poly < p_mesh->GetPolygonCount(); ++poly)
@@ -434,15 +474,11 @@ std::vector<Vertex> FBXImporter::GetVertices(FbxMesh* p_mesh) noexcept
 			{
 				const int index = p_mesh->GetPolygonVertex(poly, vert);
 
-
-
 				auto find = vertex_normal.find(index);
 				if (find == vertex_normal.end())
 					vertex_normal[index] = glm::vec4{ ParseHelper::GetVertexNormal(p_mesh, poly, vert), 1 };
 				else
 					find->second += glm::vec4{ ParseHelper::GetVertexNormal(p_mesh, poly, vert) , 1 };
-
-
 			}
 
 			// Vertex
@@ -475,8 +511,6 @@ std::vector<Vertex> FBXImporter::GetVertices(FbxMesh* p_mesh) noexcept
 	for (auto& [key, v] : vertex_normal)
 		v = glm::vec4{ v.x / v.w, v.y / v.w, v.z / v.w, 0 };
 
-
-
 	std::vector<Vertex> attrib;
 	attrib.reserve(indices.size());
 	for (int i = 0; i < static_cast<int>(indices.size()); ++i)
@@ -486,6 +520,26 @@ std::vector<Vertex> FBXImporter::GetVertices(FbxMesh* p_mesh) noexcept
 	}
 
 	return attrib;
+}
+
+void FBXImporter::SetRange(float x, float y, float z) noexcept
+{
+	if (x < min.x)
+		min.x = x;
+	if (x > max.x)
+		max.x = x;
+	if (y < min.y)
+		min.y = y;
+	if (y > max.y)
+		max.y = y;
+	if (z < min.z)
+		min.z = z;
+	if (z > max.z)
+		max.z = z;
+	sum.x += x;
+	sum.y += y;
+	sum.z += z;
+	sum.w += 1;
 }
 
 /* FBXImporter - end ----------------------------------------------------------------------------*/

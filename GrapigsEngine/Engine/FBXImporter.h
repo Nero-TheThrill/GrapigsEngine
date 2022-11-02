@@ -47,6 +47,7 @@ struct Mesh
     Material material;
     int parent = -1;
     int index = 0;
+    glm::vec3 translation{ 0 }, rotation{ 0 }, scaling{ 1 };
 };
 
 class Model
@@ -76,8 +77,12 @@ private:
     static FbxScene* ImportFbx(FbxManager* p_manager, const char* file_path) noexcept;
 	static Model* Parse(FbxNode* p_root) noexcept;
 	static int ParseNode(FbxNode* p_node, int parent, std::vector<Mesh>& meshes) noexcept;
-	static std::vector<Vertex> GetVertices( FbxMesh* p_mesh) noexcept;
+	static std::vector<Vertex> GetVertices(FbxMesh* p_mesh) noexcept;
+    static void SetRange(float x, float y, float z) noexcept;
     static std::filesystem::path s_path;
     static std::size_t s_m_verticesCount;
     static int s_m_meshIndex;
+    static glm::vec3 min, max;
+    static glm::vec4 sum;
+    static glm::mat4 globalTransform;
 };
