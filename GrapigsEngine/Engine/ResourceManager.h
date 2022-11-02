@@ -54,7 +54,7 @@ public:
 
     glm::vec4 m_color = glm::vec4{1};
 
-    void Draw(Primitive primitive) const noexcept;
+    void Draw(Primitive primitive, unsigned IBL) const noexcept;
 };
 
 
@@ -74,7 +74,6 @@ public:
     Texture* GetTexture(const unsigned tag) noexcept;
     Object* CreateObject(unsigned mesh, unsigned shader, unsigned texture = ERROR_INDEX) noexcept;
     Object* CreateObject(const char* path) noexcept;
-
     void DrawLines() const noexcept;
     void DrawTriangles() const noexcept;
 
@@ -84,6 +83,7 @@ private:
     std::map<unsigned, Texture*> m_textures;
     std::map<unsigned, Model*> m_models;
     std::map<unsigned, ShaderProgram*> m_shaders;
+    unsigned m_cubemap=0, m_brdf=0;
 
 };
 

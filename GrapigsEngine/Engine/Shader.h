@@ -69,7 +69,6 @@ private:
 
 class Texture
 {
-	static unsigned s_textureCount;
 public:
 	Texture(const char* file_path) noexcept;
 	~Texture() noexcept;
@@ -80,9 +79,15 @@ public:
 	const unsigned m_tag = 0;
 	const std::string m_name;
 	const std::filesystem::path m_path;
-private:
+protected:
+	static unsigned s_textureCount;
 	unsigned m_handle = 0;
 	unsigned m_unit = 0;
+};
+
+class CubeMapTexture final : public Texture
+{
+	CubeMapTexture(const char* file_path) noexcept;
 };
 
 class FrameBufferObject

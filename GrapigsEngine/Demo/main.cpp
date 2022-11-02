@@ -59,11 +59,11 @@ int main(void)
 {
 	Application application(1200, 900);
 	Application::SetBackgroundColor(255, 255, 255);
-	ResourceManager resource;
-	GUI gui(&resource);
+	ResourceManager* resource = new ResourceManager();
+	GUI gui(resource);
 	Lights* lights = CreateLights();
 
-	Object* obj = CreateObject(&resource);
+	Object* obj = CreateObject(resource);
 	gui.SetObject(obj);
 	
 	while(application.ShouldQuit() == false)
@@ -72,16 +72,17 @@ int main(void)
 
 		if(Input::DropAndDropDetected())
 		{
-			DragAndDrop(&resource, &gui, obj);
+			DragAndDrop(resource, &gui, obj);
 		}
 		gui.Update();
 		lights->Update();
-		resource.DrawTriangles();
+		resource->DrawTriangles();
 
 		application.EndUpdate();
 	}
 	//delete mesh;
 	application.CleanUp();
 	delete lights;
+	delete resource;
 	return 0;
 }
