@@ -15,6 +15,7 @@ public:
 	Camera(const glm::vec3& position, const glm::vec3& right_vector, const glm::vec3& up_vector, const glm::vec3& back_vector, float near_plane, float far_plane, float field_of_view) noexcept;
 	void Set(const glm::vec3& eye, const glm::vec3& look, const glm::vec3& world_up) noexcept;
 	void Set(const glm::vec3& eye) noexcept;
+	void Set(const glm::mat4& view) noexcept;
 	void Reset() noexcept;
 
 	[[nodiscard]] const glm::mat4& GetWorldToCameraMatrix() const noexcept;

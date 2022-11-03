@@ -362,6 +362,11 @@ unsigned Texture::Unit() const noexcept
 	return m_unit;
 }
 
+unsigned Texture::Handle() const noexcept
+{
+	return m_handle;
+}
+
 
 CubeMapTexture::CubeMapTexture(std::vector<std::filesystem::path> file_path) noexcept
 	: Texture("cube-map", false)

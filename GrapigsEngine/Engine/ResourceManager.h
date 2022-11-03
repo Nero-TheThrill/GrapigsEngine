@@ -43,6 +43,20 @@ private:
     GLuint m_ubo = 0;
 };
 
+class Grid
+{
+public:
+    Grid(float size, std::size_t divide = 10) noexcept;
+    ~Grid() noexcept;
+    void Draw() const noexcept;
+    glm::vec4 m_color{ 0, 0, 0, 0.5f };
+private:
+    const float m_height = 0.f;
+    unsigned m_vao, m_vbo;
+    ShaderProgram* m_program;
+    std::vector<glm::vec3> m_position;
+};
+
 class Object
 {
 public:
@@ -77,6 +91,7 @@ public:
 
     static FrameBufferObject* m_fbo;
 private:
+    Grid* m_grid;
     Object* m_object;
     std::map<unsigned, Texture*> m_textures;
     std::map<unsigned, Model*> m_models;

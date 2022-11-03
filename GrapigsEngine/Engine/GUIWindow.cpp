@@ -1,6 +1,10 @@
 #include "GUIWindow.h"
 
+#pragma warning (disable : 4201)
+
 #include <imgui.h>              // ImGui functions
+#include <glm/gtc/type_ptr.hpp>          // glm::value_ptr
+
 #include "ImGuizmo/ImGuizmo.h"  // ImGuizmo
 
 #include "Input.h"              // Input::s_windowSize
@@ -23,6 +27,25 @@ namespace GUIWindow
         return a;
     }
 
+    glm::vec3 ClampTo360(const glm::vec3 vec)
+    {
+        return glm::vec3{ ClampTo360(vec.x), ClampTo360(vec.y), ClampTo360(vec.z) };
+    }
+
+    bool is_equal(const glm::vec4& v1, const glm::vec4& v2)
+    {
+        constexpr float epsilon = std::numeric_limits<float>::epsilon();
+        return glm::epsilonEqual(v1[0], v2[0], epsilon)
+            && glm::epsilonEqual(v1[1], v2[1], epsilon)
+            && glm::epsilonEqual(v1[2], v2[2], epsilon)
+            && glm::epsilonEqual(v1[3], v2[3], epsilon);
+    }
+
+    bool is_equal(const glm::mat4 m1, const glm::mat4& m2)
+    {
+        return is_equal(m1[0], m2[0]) && is_equal(m1[1], m2[1]) && is_equal(m1[2], m2[2]) && is_equal(m1[3], m2[3]);
+    }
+
 	/*-----------------------------------------------------------------------------------------------*/
 	/* DropDown - start -----------------------------------------------------------------------------*/
 
@@ -34,19 +57,35 @@ namespace GUIWindow
     void DropDown::ClearData() noexcept
     {
         m_data.clear();
+        m_id.clear();
         m_dataSize = 0;
         m_selected = 0;
     }
 
-    void DropDown::AddData(const char* datum) noexcept
+    void DropDown::AddData(const char* datum, unsigned tag) noexcept
     {
         m_dataSize++;
         m_data.push_back(datum);
+        m_id.push_back(tag);
     }
 
     bool DropDown::Combo() noexcept
     {
         return ImGui::Combo(m_label.c_str(), &m_selected, m_data.data(), m_dataSize);
+    }
+
+    bool DropDown::Selectable() noexcept
+    {
+        bool changed = false;
+        for(int i = 0; i < m_dataSize; ++i)
+        {
+            if (ImGui::Selectable(m_data[i], m_selected == i))
+            {
+	            m_selected = i;
+                changed = true;
+            }
+        }
+        return changed;
     }
 
     int DropDown::GetSelectedIndex() const noexcept
@@ -59,19 +98,24 @@ namespace GUIWindow
         return m_data[m_selected];
     }
 
-	/* DropDown - end -------------------------------------------------------------------------------*/
+    unsigned DropDown::GetSelectedID() const noexcept
+    {
+        return m_id[m_selected];
+    }
+
+    /* DropDown - end -------------------------------------------------------------------------------*/
 	/*-----------------------------------------------------------------------------------------------*/
 	/* GUI::Window - start --------------------------------------------------------------------------*/
 
-    Window::Window(const char* name) noexcept
-        : m_name(name)
+    Window::Window(const char* name, WindowInst* p_inst) noexcept
+        : m_p_windows(p_inst), m_name(name)
     {
     }
 
     void Window::Update() noexcept
     {
         if(m_open)
-        if(ImGui::Begin(m_name.c_str()), &m_open)
+        if (ImGui::Begin(m_name.c_str(), &m_open))
         {
             Content();
             ImGui::End();
@@ -83,11 +127,45 @@ namespace GUIWindow
         m_p_object = p_object;
     }
 
+
+    WindowInst::WindowInst(ResourceManager* p_resource) noexcept
+        :
+		m_transformWin("Transform", this),
+        m_materialWin("Material", this),
+        m_sceneWin("Scene", this),
+        m_meshWin("Mesh", this),
+		m_textureModal("Import Texture Modal", this),
+        m_assetWin("Imported Asset", this),
+        m_gizmoToolWin("Tool", this),
+		m_p_resource(p_resource)
+    {
+    }
+
+    void WindowInst::SetObject(Object* p_object) noexcept
+    {
+        m_transformWin.SetObject(p_object);
+        m_materialWin.SetObject(p_object);
+        m_sceneWin.SetObject(p_object);
+        m_meshWin.SetObject(p_object);
+        m_textureModal.SetObject(p_object);
+        m_assetWin.SetObject(p_object);
+    }
+
+    void WindowInst::Update() noexcept
+    {
+        m_transformWin.Update();
+        m_materialWin.Update();
+        m_meshWin.Update();
+        m_textureModal.Update();
+        m_assetWin.Update();
+        m_sceneWin.Update();
+    }
+
     /* GUI::Window - end ----------------------------------------------------------------------------*/
 	/*-----------------------------------------------------------------------------------------------*/
 	/* Transform Window - start ---------------------------------------------------------------------*/
 
-	Transform::Transform(const char* name) noexcept : Window(name) {    }
+	Transform::Transform(const char* name, WindowInst* p_inst) noexcept : Window(name, p_inst) {    }
 
     void Transform::Content() noexcept
     {
@@ -113,6 +191,15 @@ namespace GUIWindow
             m_p_object->m_transform.Scale(m_scl * m_scl);
             m_prevScl = m_uscl;
         }
+        if(ImGui::Button("Reset"))
+        {
+            ::Transform& t = m_p_object->m_transform;
+            t.Translate({ 0, 0, 0 });
+            t.Rotate(0, 0, 0);
+            t.Scale(1);
+            SetObject(m_p_object);
+            m_reset = true;
+        }
     }
 
     void Transform::SetObject(Object* p_object) noexcept
@@ -126,20 +213,91 @@ namespace GUIWindow
         m_uscl = 1;
     }
 
+    bool Transform::DoesReset() noexcept
+    {
+        if(m_reset)
+        {
+            m_reset = false;
+            return true;
+        }
+        return false;
+    }
+
     /* Transform Window - end -----------------------------------------------------------------------*/
+    /*-----------------------------------------------------------------------------------------------*/
+    /* Gizmo Tool Window - start --------------------------------------------------------------------*/
+
+    GizmoTool::GizmoTool(const char* name, WindowInst* p_inst) noexcept
+        : Window(name, p_inst), m_selected(0),
+		m_texture{ Texture("texture/Tool/cursor.png"),
+				Texture("texture/Tool/translation.png"),
+				Texture("texture/Tool/rotation.png"),
+				Texture("texture/Tool/scaling.png") },
+		m_texId{ static_cast<intptr_t>(m_texture[0].Handle()),
+			static_cast<intptr_t>(m_texture[1].Handle()),
+			static_cast<intptr_t>(m_texture[2].Handle()),
+			static_cast<intptr_t>(m_texture[3].Handle()),}
+    {
+    }
+
+    void GizmoTool::Update() noexcept
+    {
+        const auto pos = ImGui::GetWindowPos();
+        ImGui::SetNextWindowPos(ImVec2{ pos.x + 10, pos.y + 30 });
+        ImGui::BeginChild(m_name.c_str(), ImVec2{70, 250});
+        Content();
+        ImGui::EndChild();
+    }
+
+    void GizmoTool::Content() noexcept
+    {
+        constexpr ImVec2 uv0(0, 1);
+        constexpr ImVec2 uv1(1, 0);
+        constexpr ImVec2 size(50, 50);
+        constexpr ImVec4 default_color(1, 1, 1, 1);
+        constexpr ImVec4 selected_color(0, 1, 0, 1);
+        for(int i = 0; i < 4; ++i)
+        {
+            ImGui::PushID(i);
+            if (ImGui::ImageButton("", reinterpret_cast<void*>(m_texId[i]), size, uv0, uv1, ImVec4(0, 0, 0, 1), (i == m_selected) ? selected_color : default_color))
+            {
+                m_selected = i;
+                switch (m_selected)
+                {
+                case 1: m_operation = Operation::Translation; break;
+                case 2: m_operation = Operation::Rotation; break;
+                case 3: m_operation = Operation::Scaling; break;
+                default: m_operation = Operation::None; break;
+                }
+            }
+            ImGui::PopID();
+        }
+    }
+
+    /* Gizmo Tool Window - end ----------------------------------------------------------------------*/
     /*-----------------------------------------------------------------------------------------------*/
     /* Scene Window - start -------------------------------------------------------------------------*/
 
-    Scene::Scene(const char* name) noexcept : Window(name) {    }
+    Scene::Scene(const char* name, WindowInst* p_inst) noexcept : Window(name, p_inst) {    }
+
+    void Scene::SetObject(Object* p_object) noexcept
+    {
+        Window::SetObject(p_object);
+        m_model = m_p_object->m_transform.GetTransformMatrix();
+    }
 
     void Scene::Update() noexcept
     {
-        ImGuizmo::BeginFrame();
-        if (ImGui::Begin(m_name.c_str(), &m_open))
+        if(m_open)
         {
-            Content();
-            UpdateGizmo();
-            ImGui::End();
+	        ImGuizmo::BeginFrame();
+        	if (ImGui::Begin(m_name.c_str(), &m_open))
+        	{
+        		Content();
+                m_p_windows->m_gizmoToolWin.Update();
+        		UpdateGizmo();
+        		ImGui::End();
+        	}
         }
     }
 
@@ -160,26 +318,58 @@ namespace GUIWindow
         // Set viewport
         ImGuizmo::SetOrthographic(false);
         ImGuizmo::SetDrawlist();
-        const auto& size = ImGui::GetWindowSize();
-        const auto& pos = ImGui::GetWindowPos();
-        ImGuizmo::SetRect(pos.x, pos.y, size.x, size.y);
+        ImGuizmo::SetImGuiContext(ImGui::GetCurrentContext());
 
         // Camera
         Camera* cam = CameraBuffer::GetMainCamera();
         glm::mat4 view = cam->GetWorldToCameraMatrix();
-        glm::mat4 proj = cam->GetCameraToNDCMatrix();
+        const glm::mat4& proj = cam->GetCameraToNDCMatrix();
 
-        // Object transform
-        glm::mat4 transform = m_p_object->m_transform.GetTransformMatrix();
+        GUIWindow::GizmoTool* p_gizmotool = &m_p_windows->m_gizmoToolWin;
+        GUIWindow::Transform* p_transformWin = &m_p_windows->m_transformWin;
 
-        ImGuizmo::Manipulate(&view[0][0], &proj[0][0], ImGuizmo::OPERATION::TRANSLATE, ImGuizmo::MODE::LOCAL, &transform[0][0]);
+        if(p_gizmotool->m_operation != GizmoTool::Operation::None)
+        {
+        	if(p_transformWin->DoesReset())
+        		m_model = m_p_object->m_transform.GetTransformMatrix();
+
+        	// Set operation
+        	auto operation = ImGuizmo::OPERATION::TRANSLATE;
+        	if (p_gizmotool->m_operation == GizmoTool::Operation::Rotation)
+        		operation = ImGuizmo::OPERATION::ROTATE;
+        	else if (p_gizmotool->m_operation == GizmoTool::Operation::Scaling)
+        		operation = ImGuizmo::OPERATION::SCALE;
+
+        	ImGuizmo::Manipulate(glm::value_ptr(view), glm::value_ptr(proj), operation, ImGuizmo::MODE::WORLD, &m_model[0][0]);
+        	if(ImGuizmo::IsUsing())
+        	{
+        		glm::vec3 translation, rotation, scaling;
+           
+        		ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(m_model), &translation[0], &rotation[0], &scaling[0]);
+        		ImGuizmo::RecomposeMatrixFromComponents(&translation[0], &rotation[0], &scaling[0], glm::value_ptr(m_model));
+
+        		::Transform& t = m_p_object->m_transform;
+        		const glm::vec3 deltaRot = rotation - t.GetRotation();
+        		rotation = (t.GetRotation() + deltaRot);
+
+        		t.Translate(translation);
+        		t.Rotate(rotation.x, rotation.y, rotation.z);
+        		t.Scale(scaling);
+                p_transformWin->SetObject(m_p_object);
+        	}
+        }
+
+        const auto& size = ImGui::GetWindowSize();
+        const auto& pos = ImGui::GetWindowPos();
+        ImGuizmo::SetRect(pos.x, pos.y, size.x, size.y);
+        ImGuizmo::ViewManipulate(glm::value_ptr(view), 8, ImVec2(pos.x + size.x - 128, pos.y + 20), ImVec2(128, 128), 0x10101010);
     }
 
     /* Scene Window - end ---------------------------------------------------------------------------*/
     /*-----------------------------------------------------------------------------------------------*/
     /* Mesh Window - start --------------------------------------------------------------------------*/
 
-    Mesh::Mesh(const char* name) noexcept : Window(name) {    }
+    Mesh::Mesh(const char* name, WindowInst* p_inst) noexcept : Window(name, p_inst) {    }
 
     void Mesh::Content() noexcept
     {
@@ -232,7 +422,7 @@ namespace GUIWindow
     /*-----------------------------------------------------------------------------------------------*/
     /* Material Window - start ----------------------------------------------------------------------*/
 
-    Material::Material(const char* name) noexcept : Window(name) {    }
+    Material::Material(const char* name, WindowInst* p_inst) noexcept : Window(name, p_inst) {    }
 
     void Material::Content() noexcept
     {
@@ -273,16 +463,52 @@ namespace GUIWindow
     /*-----------------------------------------------------------------------------------------------*/
     /* Asset Window - start -------------------------------------------------------------------------*/
 
-    Asset::Asset(const char* name) noexcept
-        : Window(name), m_modelDD("Models"), m_textureDD("Textures")
+    Asset::Asset(const char* name, WindowInst* p_inst) noexcept
+        : Window(name, p_inst), m_modelDD("Models"), m_textureDD("Textures"), m_texID(ERROR_INDEX)
     {
     }
 
     void Asset::Content() noexcept
     {
         m_modelDD.Combo();
+        ImGui::TextUnformatted("[THIS DROP DOWN DOES NOT WORK FOR NOW]");
+
         ImGui::Separator();
-        m_textureDD.Combo();
+    	ImGui::Separator();
+
+    	if(m_textureDD.Combo())
+    	{
+            const auto* texture = m_p_windows->m_p_resource->GetTexture(m_textureDD.GetSelectedID());
+            m_texID = static_cast<intptr_t>(texture->Handle());
+    	}
+        if(m_texID != ERROR_INDEX)
+        {
+            constexpr ImVec2 uv0(0, 1), uv1(1, 0), size(100, 100);
+            ImGui::PushID("Asset-Texture");
+            ImGui::ImageButton("",reinterpret_cast<void*>(m_texID), size, uv0, uv1);
+            ImGui::PopID();
+
+            // Set texture type
+            ImGui::SameLine();
+            ImGui::BeginChild("Texture Type", ImVec2{0, 100}, true, ImGuiWindowFlags_AlwaysAutoResize);
+            m_p_windows->m_textureModal.m_texTypeDropDown.Selectable();
+            ImGui::EndChild();
+
+            // Apply texture
+            if(ImGui::Button("Apply to all meshes"))
+            {
+                auto* texture = m_p_windows->m_p_resource->GetTexture(m_textureDD.GetSelectedID());
+	            m_p_windows->m_textureModal.ApplyTextureToObject(texture);
+            }
+            if(ImGui::Button("Apply to current mesh"))
+            {
+                auto* texture = m_p_windows->m_p_resource->GetTexture(m_textureDD.GetSelectedID());
+                if(m_p_windows->m_materialWin.GetMesh())
+					m_p_windows->m_textureModal.ApplyTextureToMesh(texture);
+                else
+                    m_p_windows->m_textureModal.ApplyTextureToObject(texture);
+            }
+        }
     }
 
     void Asset::SetObject(Object* p_object) noexcept
@@ -314,7 +540,7 @@ namespace GUIWindow
                 return;
         }
         m_modelTags.insert(p_model->m_tag);
-        m_modelDD.AddData(p_model->m_name.c_str());
+        m_modelDD.AddData(p_model->m_name.c_str(), p_model->m_tag);
     }
 
     void Asset::AddTextureData(const Texture* p_texture) noexcept
@@ -325,15 +551,18 @@ namespace GUIWindow
                 return;
         }
         m_textureTags.insert(p_texture->m_tag);
-        m_textureDD.AddData(p_texture->m_name.c_str());
+        m_textureDD.AddData(p_texture->m_name.c_str(), p_texture->m_tag);
+
+        if (m_textureTags.size() == 1)
+            m_texID = static_cast<intptr_t>(p_texture->Handle());
     }
 
     /* Asset Window - end ---------------------------------------------------------------------------*/
     /*-----------------------------------------------------------------------------------------------*/
     /* Texture Modal Window - start -----------------------------------------------------------------*/
 
-	TextureModal::TextureModal() noexcept
-        : m_open(false), m_p_object(nullptr), m_texTypeDropDown("Texture Type")
+	TextureModal::TextureModal(const char* name, WindowInst* p_inst) noexcept
+        :  Window(name, p_inst), m_texTypeDropDown("Texture Type")
     {
         m_open = false;
         m_texTypeDropDown.AddData("Albedo(default)");
@@ -343,19 +572,15 @@ namespace GUIWindow
         m_texTypeDropDown.AddData("Normal Map");
     }
 
-	void TextureModal::SetObject(Object* p_object) noexcept
-	{
-        m_p_object = p_object;
-	}
-
 	void TextureModal::ImportTexture(const std::filesystem::path& path) noexcept
     {
         m_texturePaths.push(path);
         m_open = true;
     }
 
-    void TextureModal::OpenTextureModal(const ::Mesh* p_mesh) const noexcept
+    void TextureModal::OpenTextureModal() const noexcept
     {
+        const ::Mesh* p_mesh = m_p_windows->m_materialWin.GetMesh();
         if (p_mesh != nullptr)
         {
             if (p_mesh->parent == -1) // root
@@ -367,14 +592,19 @@ namespace GUIWindow
             ImGui::OpenPopup("Import Texture To All Meshes");
     }
 
-    void TextureModal::Update(ResourceManager* p_resource, ::Mesh* p_mesh, Asset* asset_win) noexcept
+    void TextureModal::Update() noexcept
+    {
+        Content();
+    }
+
+    void TextureModal::Content() noexcept
     {
         if (m_open)
         {
             m_open = false;
             if (!m_texturePaths.empty())
-                OpenTextureModal(p_mesh);
-        }
+                OpenTextureModal();
+            }
 
         const ImVec2 center = ImGui::GetMainViewport()->GetCenter();
         // Open texture import modal window
@@ -388,17 +618,10 @@ namespace GUIWindow
             ImGui::Separator();
             if (ImGui::Button("OK", ImVec2(120, 0)))
             {
-                const auto tex = p_resource->LoadTexture(path.string().c_str());
-                auto* texture = p_resource->GetTexture(tex);
-                asset_win->AddTextureData(texture);
-                switch (m_texTypeDropDown.GetSelectedIndex())
-                {
-                case 1: p_mesh->material.t_metallic = texture; break;
-                case 2: p_mesh->material.t_roughness = texture; break;
-                case 3: p_mesh->material.t_ao = texture; break;
-                case 4: p_mesh->material.t_normal = texture; break;
-                default:p_mesh->material.t_albedo = texture; break;
-                }
+                const auto tex = m_p_windows->m_p_resource->LoadTexture(path.string().c_str());
+                auto* texture = m_p_windows->m_p_resource->GetTexture(tex);
+                m_p_windows->m_assetWin.AddTextureData(texture);
+                ApplyTextureToMesh(texture);
                 m_texturePaths.pop(); m_open = true;
                 ImGui::CloseCurrentPopup();
             }
@@ -423,43 +646,10 @@ namespace GUIWindow
             ImGui::Separator();
             if (ImGui::Button("OK", ImVec2(120, 0)))
             {
-                const auto tex = p_resource->LoadTexture(path.string().c_str());
-                auto* texture = p_resource->GetTexture(tex);
-                asset_win->AddTextureData(texture);
-                auto& meshes = m_p_object->m_p_model->m_meshes;
-                switch (m_texTypeDropDown.GetSelectedIndex())
-                {
-                case 1:
-                {
-                    for (std::size_t i = 1; i < meshes.size(); ++i)
-                        meshes[i].material.t_metallic = texture;
-                }
-                break;
-                case 2:
-                {
-                    for (std::size_t i = 1; i < meshes.size(); ++i)
-                        meshes[i].material.t_roughness = texture;
-                }
-                break;
-                case 3:
-                {
-                    for (std::size_t i = 1; i < meshes.size(); ++i)
-                        meshes[i].material.t_ao = texture;
-                }
-                break;
-                case 4:
-                {
-                    for (std::size_t i = 1; i < meshes.size(); ++i)
-                        meshes[i].material.t_normal = texture;
-                }
-                break;
-                default:
-                {
-                    for (std::size_t i = 1; i < meshes.size(); ++i)
-                        meshes[i].material.t_albedo = texture;
-                }
-                break;
-                }
+                const auto tex = m_p_windows->m_p_resource->LoadTexture(path.string().c_str());
+                auto* texture = m_p_windows->m_p_resource->GetTexture(tex);
+                m_p_windows->m_assetWin.AddTextureData(texture);
+                ApplyTextureToObject(texture);
                 m_texturePaths.pop(); m_open = true;
                 ImGui::CloseCurrentPopup();
             }
@@ -471,6 +661,57 @@ namespace GUIWindow
                 ImGui::CloseCurrentPopup();
             }
             ImGui::EndPopup();
+        }
+    }
+
+    void TextureModal::ApplyTextureToMesh(Texture* p_texture) noexcept
+    {
+        ::Mesh* p_mesh = m_p_windows->m_materialWin.GetMesh();
+        switch (m_texTypeDropDown.GetSelectedIndex())
+        {
+        case 1: p_mesh->material.t_metallic = p_texture; break;
+        case 2: p_mesh->material.t_roughness = p_texture; break;
+        case 3: p_mesh->material.t_ao = p_texture; break;
+        case 4: p_mesh->material.t_normal = p_texture; break;
+        default:p_mesh->material.t_albedo = p_texture; break;
+        }
+    }
+
+    void TextureModal::ApplyTextureToObject(Texture* p_texture) noexcept
+    {
+        auto& meshes = m_p_object->m_p_model->m_meshes;
+        switch (m_texTypeDropDown.GetSelectedIndex())
+        {
+        case 1:
+        {
+            for (std::size_t i = 1; i < meshes.size(); ++i)
+                meshes[i].material.t_metallic = p_texture;
+        }
+        break;
+        case 2:
+        {
+            for (std::size_t i = 1; i < meshes.size(); ++i)
+                meshes[i].material.t_roughness = p_texture;
+        }
+        break;
+        case 3:
+        {
+            for (std::size_t i = 1; i < meshes.size(); ++i)
+                meshes[i].material.t_ao = p_texture;
+        }
+        break;
+        case 4:
+        {
+            for (std::size_t i = 1; i < meshes.size(); ++i)
+                meshes[i].material.t_normal = p_texture;
+        }
+        break;
+        default:
+        {
+            for (std::size_t i = 1; i < meshes.size(); ++i)
+                meshes[i].material.t_albedo = p_texture;
+        }
+        break;
         }
     }
 

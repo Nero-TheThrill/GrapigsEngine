@@ -79,6 +79,7 @@ public:
 	~Texture() noexcept;
 
 	[[nodiscard]] unsigned Unit() const noexcept;
+	[[nodiscard]] unsigned Handle() const noexcept;
 
 	const bool m_initialized;
 	const unsigned m_tag = 0;

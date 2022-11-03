@@ -6,7 +6,6 @@
  */
 #include "Camera.h"
 
-#include <ostream>	// std::ostream
 #include <gl/glew.h>	// gl functions for camera buffer
 #include <glm/gtc/matrix_transform.hpp>	// matrix calculation
 
@@ -44,28 +43,33 @@ Camera::Camera(const glm::vec3& position, const glm::vec3& right_vector, const g
 void Camera::Set(const glm::vec3& eye, const glm::vec3& look, const glm::vec3& world_up) noexcept
 {
 	m_eye = eye;
-	m_right = glm::normalize(glm::cross(look, world_up));
-	m_up = glm::normalize(glm::cross(m_right, look));
 	m_back = glm::normalize(-look);
+	m_right = glm::normalize(glm::cross(m_back, world_up));
+	m_up = glm::normalize(glm::cross(m_right, m_back));
 	UpdateMatrix();
 }
 
 void Camera::Set(const glm::vec3& eye) noexcept
 {
 	m_eye = eye;
-	const glm::vec3& look = glm::normalize(eye);
-	m_right = glm::normalize(glm::cross(look, glm::vec3{ 0, 1, 0 }));
-	m_up = glm::normalize(glm::cross(m_right, look));
-	m_back = glm::normalize(-look);
+	m_back = glm::normalize(-eye);
+	m_right = glm::normalize(glm::cross(m_back, glm::vec3{ 0, 1, 0 }));
+	m_up = glm::normalize(glm::cross(m_right, m_back));
+	UpdateMatrix();
+}
+
+void Camera::Set(const glm::mat4& view) noexcept
+{
+	m_right = view[0];
+	m_up = view[1];
+	m_back = -view[2];
+	m_eye = -view[3]; // TODO: decompose eye
 	UpdateMatrix();
 }
 
 void Camera::Reset() noexcept
 {
-	m_eye = glm::vec3{ 0, 0,3 };
-	m_up = glm::vec3{ 0 ,1, 0 };
-	m_right = glm::vec3{ 1, 0, 0 };
-	m_back = glm::vec3{ 0, 0, -1 };
+	Set(glm::vec3{ 0, 1, 3 });
 	UpdateMatrix();
 }
 
@@ -181,7 +185,7 @@ void CameraBuffer::UpdateMainCamera() noexcept
 		case Modifier::Shift:
 		{
 			s_m_camera->Upward(static_cast<float>(cursor_dir.y) * 0.002f);
-			s_m_camera->Sideward(static_cast<float>(-cursor_dir.x) * 0.002f);
+			s_m_camera->Sideward(static_cast<float>(cursor_dir.x) * 0.002f);
 		}
 		break;
 		case Modifier::Control:

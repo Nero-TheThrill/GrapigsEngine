@@ -57,8 +57,64 @@ void Lights::AddLight(Light light)
     lights.push_back(light);
 }
 
-
 /* Light - end ----------------------------------------------------------------------------------*/
+/*-----------------------------------------------------------------------------------------------*/
+/* Grid - start ---------------------------------------------------------------------------------*/
+
+Grid::Grid(float size, std::size_t divide) noexcept
+    : m_vao(0), m_vbo(0), m_position((divide + 1) * 4)
+{
+    assert(divide > 2);
+
+    const std::vector<std::pair<ShaderType, std::filesystem::path>> files = {
+               std::make_pair(ShaderType::Vertex, "shader/line.vert"),
+               std::make_pair(ShaderType::Fragment, "shader/line.frag")
+    };
+    m_program = new ShaderProgram(files);
+
+    const float dx = (2.f * size) / static_cast<float>(divide);
+    float x = -size;
+    for (std::size_t i = 0; i <= divide; ++i)
+    {
+        m_position[i * 4] = glm::vec3{ x, m_height, -size };
+        m_position[i * 4 + 1] = glm::vec3{ x, m_height, size };
+        m_position[i * 4 + 2] = glm::vec3{ -size, m_height, x };
+        m_position[i * 4 + 3] = glm::vec3{ size, m_height, x };
+        x += dx;
+    }
+
+    glCreateBuffers(1, &m_vbo);
+    glNamedBufferStorage(m_vbo, static_cast<GLsizeiptr>(sizeof(glm::vec3) * m_position.size()), m_position.data(), GL_DYNAMIC_STORAGE_BIT);
+    glCreateVertexArrays(1, &m_vao);
+    glBindVertexArray(m_vao);
+
+    // Vertex Position
+    glEnableVertexArrayAttrib(m_vao, 0);
+    glVertexArrayVertexBuffer(m_vao, 0, m_vbo, 0, sizeof(glm::vec3));
+    glVertexArrayAttribFormat(m_vao, 0, 3, GL_FLOAT, GL_FALSE, 0);
+    glVertexArrayAttribBinding(m_vao, 0, 0);
+
+    glBindVertexArray(0);
+}
+
+Grid::~Grid() noexcept
+{
+    delete m_program;
+    glDeleteVertexArrays(1, &m_vao);
+    glDeleteBuffers(1, &m_vbo);
+}
+
+void Grid::Draw() const noexcept
+{
+    m_program->Use();
+    glBindVertexArray(m_vao);
+    m_program->SendUniform("u_color", m_color);
+    glDrawArrays(GL_LINES, 0, static_cast<GLsizei>(m_position.size()));
+    glBindVertexArray(0);
+    m_program->UnUse();
+}
+
+/* Grid - end -----------------------------------------------------------------------------------*/
 /*-----------------------------------------------------------------------------------------------*/
 /* Object - start -------------------------------------------------------------------------------*/
 
@@ -82,6 +138,7 @@ void Object::Draw(Primitive primitive, const std::map<TextureType, unsigned>& te
 FrameBufferObject* ResourceManager::m_fbo = new FrameBufferObject();
 
 ResourceManager::ResourceManager() :
+	m_grid(new Grid(3, 10)),
     m_object(nullptr),
     m_cubemap({
         "texture/skybox/right.jpg",
@@ -215,12 +272,14 @@ Object* ResourceManager::CreateObject(const char* path) noexcept
 
 void ResourceManager::DrawLines() const noexcept
 {
+    m_grid->Draw();
     m_object->Draw(Primitive::LineLoop, m_texUnit);
 }
 
 void ResourceManager::DrawTriangles() const noexcept
 {
     m_fbo->Bind();
+    m_grid->Draw();
     m_object->Draw(Primitive::Triangles, m_texUnit);
     m_fbo->UnBind();
 }

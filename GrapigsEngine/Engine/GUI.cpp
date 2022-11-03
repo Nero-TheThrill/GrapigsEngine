@@ -10,46 +10,30 @@
 /* GUI - start ----------------------------------------------------------------------------------*/
 
 GUI::GUI(ResourceManager* p_resourceManager) noexcept
-    : m_p_resourceManager(p_resourceManager),
-	m_p_object(nullptr),
-    m_transformWin("Transform"),
-    m_materialWin("Material"),
-    m_sceneWin("Scene"),
-    m_meshWin("Mesh"),
-    m_assetWin("Imported Asset")
+    : m_p_object(nullptr), m_windows(p_resourceManager)
 {
 }
 
 void GUI::SetObject(Object* object) noexcept
 {
     m_p_object = object;
-    m_transformWin.SetObject(m_p_object);
-    m_materialWin.SetObject(m_p_object);
-    m_sceneWin.SetObject(m_p_object);
-    m_meshWin.SetObject(m_p_object);
-    m_textureModal.SetObject(m_p_object);
-    m_assetWin.SetObject(m_p_object);
+    m_windows.SetObject(object);
 }
 
 void GUI::Update() noexcept
 {
     DockSpace();
-    m_transformWin.Update();
-    m_materialWin.Update();
-    m_meshWin.Update();
-    m_textureModal.Update(m_p_resourceManager, m_materialWin.GetMesh(), &m_assetWin);
-    m_assetWin.Update();
-    m_sceneWin.Update();
+    m_windows.Update();
 }
 
 Mesh* GUI::GetMesh() const noexcept
 {
-    return m_materialWin.GetMesh();
+    return m_windows.m_materialWin.GetMesh();
 }
 
 void GUI::ImportTexture(const std::filesystem::path& path) noexcept
 {
-    m_textureModal.ImportTexture(path);
+    m_windows.m_textureModal.ImportTexture(path);
 }
 
 void GUI::DockSpace() noexcept
@@ -83,10 +67,11 @@ void GUI::MainMenuBar() noexcept
     {
         if(ImGui::BeginMenu("Windows"))
         {
-            ImGui::MenuItem("Transform Window", "", &m_transformWin.m_open);
-            ImGui::MenuItem("Material Window", "", &m_materialWin.m_open);
-            ImGui::MenuItem("Scene Window", "", &m_sceneWin.m_open);
-            ImGui::MenuItem("Mesh Window", "", &m_meshWin.m_open);
+            ImGui::MenuItem("Transform Window", "", &m_windows.m_transformWin.m_open);
+            ImGui::MenuItem("Material Window", "", &m_windows.m_materialWin.m_open);
+            ImGui::MenuItem("Scene Window", "", &m_windows.m_sceneWin.m_open);
+            ImGui::MenuItem("Mesh Window", "", &m_windows.m_meshWin.m_open);
+            ImGui::MenuItem("Asset Window", "", &m_windows.m_assetWin.m_open);
             ImGui::EndMenu();
         }
 

@@ -19,13 +19,6 @@ public:
 private:
 	void DockSpace() noexcept;
 	void MainMenuBar() noexcept;
-	ResourceManager* m_p_resourceManager;
 	Object* m_p_object;
-
-	GUIWindow::Transform m_transformWin;
-	GUIWindow::Material m_materialWin;
-	GUIWindow::Scene m_sceneWin;
-	GUIWindow::Mesh m_meshWin;
-	GUIWindow::TextureModal m_textureModal;
-	GUIWindow::Asset m_assetWin;
+	GUIWindow::WindowInst m_windows;
 };
