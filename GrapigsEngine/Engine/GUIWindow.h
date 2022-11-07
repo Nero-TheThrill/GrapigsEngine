@@ -79,7 +79,7 @@ namespace GUIWindow
 		void Content() noexcept override;
 	private:
 		void UpdateGizmo() noexcept;
-		glm::mat4 m_model;
+		glm::mat4 m_model{1.f};
 	};
 
 	class Mesh final : public Window
@@ -106,6 +106,7 @@ namespace GUIWindow
 	{
 	public:
 		Asset(const char* name, WindowInst* p_inst) noexcept;
+		void Update() noexcept override;
 		void Content() noexcept override;
 		void SetObject(Object* p_object) noexcept override;
 		void AddModelData(const ::Model* p_model) noexcept;

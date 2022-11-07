@@ -290,14 +290,14 @@ namespace GUIWindow
     {
         if(m_open)
         {
-	        ImGuizmo::BeginFrame();
-        	if (ImGui::Begin(m_name.c_str(), &m_open))
-        	{
-        		Content();
-                m_p_windows->m_gizmoToolWin.Update();
-        		UpdateGizmo();
-        		ImGui::End();
-        	}
+            ImGuizmo::BeginFrame();
+            ImGui::Begin(m_name.c_str(), &m_open);
+	        {
+		        Content();
+            	m_p_windows->m_gizmoToolWin.Update();
+            	UpdateGizmo();
+	        }
+            ImGui::End();
         }
     }
 
@@ -466,6 +466,16 @@ namespace GUIWindow
     Asset::Asset(const char* name, WindowInst* p_inst) noexcept
         : Window(name, p_inst), m_modelDD("Models"), m_textureDD("Textures"), m_texID(ERROR_INDEX)
     {
+    }
+
+    void Asset::Update() noexcept
+    {
+        if (m_open)
+        {
+            ImGui::Begin(m_name.c_str(), &m_open);
+            Content();
+            ImGui::End();
+        }
     }
 
     void Asset::Content() noexcept
