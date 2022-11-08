@@ -46,6 +46,19 @@ namespace GUIWindow
         return is_equal(m1[0], m2[0]) && is_equal(m1[1], m2[1]) && is_equal(m1[2], m2[2]) && is_equal(m1[3], m2[3]);
     }
 
+	void HelpMarker(const char* desc)
+    {
+        //ImGui::TextDisabled("(?)");
+        if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort))
+        {
+            ImGui::BeginTooltip();
+            ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+            ImGui::TextUnformatted(desc);
+            ImGui::PopTextWrapPos();
+            ImGui::EndTooltip();
+        }
+    }
+
 	/*-----------------------------------------------------------------------------------------------*/
 	/* DropDown - start -----------------------------------------------------------------------------*/
 
@@ -114,9 +127,9 @@ namespace GUIWindow
 
     void Window::Update() noexcept
     {
-        if(m_open)
-        if (ImGui::Begin(m_name.c_str(), &m_open))
+        if (m_open)
         {
+            ImGui::Begin(m_name.c_str(), &m_open);
             Content();
             ImGui::End();
         }
@@ -126,7 +139,6 @@ namespace GUIWindow
     {
         m_p_object = p_object;
     }
-
 
     WindowInst::WindowInst(ResourceManager* p_resource) noexcept
         :
@@ -153,6 +165,7 @@ namespace GUIWindow
 
     void WindowInst::Update() noexcept
     {
+        m_texturePreview.Update();
         m_transformWin.Update();
         m_materialWin.Update();
         m_meshWin.Update();
@@ -259,7 +272,7 @@ namespace GUIWindow
         for(int i = 0; i < 4; ++i)
         {
             ImGui::PushID(i);
-            if (ImGui::ImageButton("", reinterpret_cast<void*>(m_texId[i]), size, uv0, uv1, ImVec4(0, 0, 0, 1), (i == m_selected) ? selected_color : default_color))
+            if (ImGui::ImageButton("", reinterpret_cast<void*>(m_texId[i]), size, uv0, uv1, ImVec4(0, 0, 0, 0), (i == m_selected) ? selected_color : default_color))
             {
                 m_selected = i;
                 switch (m_selected)
@@ -422,10 +435,14 @@ namespace GUIWindow
     /*-----------------------------------------------------------------------------------------------*/
     /* Material Window - start ----------------------------------------------------------------------*/
 
-    Material::Material(const char* name, WindowInst* p_inst) noexcept : Window(name, p_inst) {    }
+    Material::Material(const char* name, WindowInst* p_inst) noexcept
+		: Window(name, p_inst)
+    {
+    }
 
     void Material::Content() noexcept
     {
+        // Detect drag and drop mesh from mesh window
         ImGui::Selectable(m_notice.c_str());
         if (ImGui::BeginDragDropTarget())
         {
@@ -433,18 +450,24 @@ namespace GUIWindow
             {
                 IM_ASSERT(payload->DataSize == sizeof(int));
                 const int index = *(const int*)payload->Data;
-                p_mesh = &m_p_object->m_p_model->m_meshes[index];
-                m_notice = p_mesh->name;
+                m_p_mesh = &m_p_object->m_p_model->m_meshes[index];
+                m_notice = m_p_mesh->name;
             }
             ImGui::EndDragDropTarget();
         }
 
-        if (p_mesh)
+        // Show mesh information
+        if (m_p_mesh)
         {
             ImGui::Separator();
-            ::Material& m = p_mesh->material;
-            ImGui::SliderFloat("Metallic", &m.metallic, 0, 1, "%.2f");
-            ImGui::SliderFloat("Roughness", &m.roughness, 0, 1, "%.2f");
+            ::Material* m = &m_p_mesh->material;
+            ImGui::SliderFloat("Metallic", &m->metallic, 0, 1, "%.2f");
+            ImGui::SliderFloat("Roughness", &m->roughness, 0, 1, "%.2f");
+            DrawTexture(m->t_albedo, "Color"); ImGui::SameLine();
+            DrawTexture(m->t_metallic, "Metalness"); ImGui::SameLine();
+            DrawTexture(m->t_roughness, "Roughness"); ImGui::SameLine();
+            DrawTexture(m->t_normal, "Normal"); ImGui::SameLine();
+            DrawTexture(m->t_ao, "AO");
         }
     }
 
@@ -456,7 +479,51 @@ namespace GUIWindow
 
     ::Mesh* Material::GetMesh() const noexcept
     {
-        return p_mesh;
+        return m_p_mesh;
+    }
+
+    void Material::DrawTexture(Texture* texture, const char* desc) noexcept
+    {
+        ImGui::BeginChild(desc, { 120, 150 }, true);
+        ImGui::TextUnformatted(desc);
+        if(texture)
+        {
+	        void* id = reinterpret_cast<void*>(static_cast<intptr_t>(texture->Handle()));
+            if(ImGui::ImageButton(desc, id, { 100, 100 }, { 0, 1 }, { 1, 0 }, {0, 0, 0, 0}, {1, 1, 1, 1}))
+            {
+                ImGui::OpenPopup("Open Texture Menu");
+                m_p_clicked = texture;
+            }
+
+            // Drag and drop detect
+        	if (ImGui::BeginDragDropTarget())
+            {
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("_TextureSource"))
+                {
+                    IM_ASSERT(payload->DataSize == sizeof(unsigned));
+                    auto* p_texture = m_p_windows->m_p_resource->GetTexture(*(unsigned*)(payload->Data));
+
+                	::Material* m = &m_p_mesh->material;
+                    if (m->t_albedo == texture) m->t_albedo = p_texture;
+                    else if (m->t_normal == texture) m->t_normal = p_texture;
+                    else if (m->t_metallic == texture) m->t_metallic = p_texture;
+                    else if (m->t_roughness == texture) m->t_roughness = p_texture;
+                    else if (m->t_ao == texture) m->t_ao = p_texture;
+                }
+                ImGui::EndDragDropTarget();
+            }
+        }
+
+        if(ImGui::BeginPopup("Open Texture Menu"))
+        {
+            if(ImGui::Button("Preview"))
+            {
+                m_p_windows->m_texturePreview.AddTexture(m_p_clicked);
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
+        ImGui::EndChild();
     }
 
     /* Material Window - end ------------------------------------------------------------------------*/
@@ -464,18 +531,8 @@ namespace GUIWindow
     /* Asset Window - start -------------------------------------------------------------------------*/
 
     Asset::Asset(const char* name, WindowInst* p_inst) noexcept
-        : Window(name, p_inst), m_modelDD("Models"), m_textureDD("Textures"), m_texID(ERROR_INDEX)
+        : Window(name, p_inst), m_modelDD("Models"), m_textureDD("Textures"), m_p_texture(nullptr)
     {
-    }
-
-    void Asset::Update() noexcept
-    {
-        if (m_open)
-        {
-            ImGui::Begin(m_name.c_str(), &m_open);
-            Content();
-            ImGui::End();
-        }
     }
 
     void Asset::Content() noexcept
@@ -488,14 +545,21 @@ namespace GUIWindow
 
     	if(m_textureDD.Combo())
     	{
-            const auto* texture = m_p_windows->m_p_resource->GetTexture(m_textureDD.GetSelectedID());
-            m_texID = static_cast<intptr_t>(texture->Handle());
+    		m_p_texture = m_p_windows->m_p_resource->GetTexture(m_textureDD.GetSelectedID());
     	}
-        if(m_texID != ERROR_INDEX)
+
+        if(m_p_texture)
         {
             constexpr ImVec2 uv0(0, 1), uv1(1, 0), size(100, 100);
             ImGui::PushID("Asset-Texture");
-            ImGui::ImageButton("",reinterpret_cast<void*>(m_texID), size, uv0, uv1);
+            ImGui::ImageButton("", reinterpret_cast<void*>(static_cast<intptr_t>(m_p_texture->Handle())), size, uv0, uv1);
+            // Dragging
+        	if (ImGui::BeginDragDropSource())
+            {
+                ImGui::SetDragDropPayload("_TextureSource", &m_p_texture->m_tag, sizeof(unsigned));
+                ImGui::Text(m_p_texture->m_name.c_str());
+                ImGui::EndDragDropSource();
+            }
             ImGui::PopID();
 
             // Set texture type
@@ -513,8 +577,13 @@ namespace GUIWindow
             if(ImGui::Button("Apply to current mesh"))
             {
                 auto* texture = m_p_windows->m_p_resource->GetTexture(m_textureDD.GetSelectedID());
-                if(m_p_windows->m_materialWin.GetMesh())
-					m_p_windows->m_textureModal.ApplyTextureToMesh(texture);
+                if(const auto* mesh = m_p_windows->m_materialWin.GetMesh(); mesh)
+                {
+                    if(mesh->parent == -1)
+	                    m_p_windows->m_textureModal.ApplyTextureToObject(texture);
+                    else
+		                m_p_windows->m_textureModal.ApplyTextureToMesh(texture);
+                }
                 else
                     m_p_windows->m_textureModal.ApplyTextureToObject(texture);
             }
@@ -553,7 +622,7 @@ namespace GUIWindow
         m_modelDD.AddData(p_model->m_name.c_str(), p_model->m_tag);
     }
 
-    void Asset::AddTextureData(const Texture* p_texture) noexcept
+    void Asset::AddTextureData(Texture* p_texture) noexcept
     {
         for (const auto& tag : m_textureTags)
         {
@@ -564,7 +633,7 @@ namespace GUIWindow
         m_textureDD.AddData(p_texture->m_name.c_str(), p_texture->m_tag);
 
         if (m_textureTags.size() == 1)
-            m_texID = static_cast<intptr_t>(p_texture->Handle());
+            m_p_texture = p_texture;
     }
 
     /* Asset Window - end ---------------------------------------------------------------------------*/
@@ -572,7 +641,8 @@ namespace GUIWindow
     /* Texture Modal Window - start -----------------------------------------------------------------*/
 
 	TextureModal::TextureModal(const char* name, WindowInst* p_inst) noexcept
-        :  Window(name, p_inst), m_texTypeDropDown("Texture Type")
+        :  Window(name, p_inst), m_isNewTexture(false), m_applyTexture(true),
+			m_p_texture(nullptr), m_texTypeDropDown("Type")
     {
         m_open = false;
         m_texTypeDropDown.AddData("Albedo(default)");
@@ -588,7 +658,7 @@ namespace GUIWindow
         m_open = true;
     }
 
-    void TextureModal::OpenTextureModal() const noexcept
+    void TextureModal::OpenTextureModal() noexcept
     {
         const ::Mesh* p_mesh = m_p_windows->m_materialWin.GetMesh();
         if (p_mesh != nullptr)
@@ -600,8 +670,18 @@ namespace GUIWindow
         }
         else
             ImGui::OpenPopup("Import Texture To All Meshes");
-    }
 
+        // Check if this texture is already exist
+        m_p_texture = m_p_windows->m_p_resource->GetTexture(m_texturePaths.front());
+        if (m_p_texture == nullptr)
+        {
+            m_p_texture = new Texture(m_texturePaths.front().string().c_str());
+            m_isNewTexture = true;
+        }
+        else
+            m_isNewTexture = false;
+    }
+    
     void TextureModal::Update() noexcept
     {
         Content();
@@ -614,7 +694,7 @@ namespace GUIWindow
             m_open = false;
             if (!m_texturePaths.empty())
                 OpenTextureModal();
-            }
+        }
 
         const ImVec2 center = ImGui::GetMainViewport()->GetCenter();
         // Open texture import modal window
@@ -622,26 +702,8 @@ namespace GUIWindow
         ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
         if (ImGui::BeginPopupModal("Import Texture", NULL, ImGuiWindowFlags_AlwaysAutoResize))
         {
-            const std::filesystem::path path{ m_texturePaths.front() };
-            ImGui::TextUnformatted(path.filename().string().c_str());
-            m_texTypeDropDown.Combo();
-            ImGui::Separator();
-            if (ImGui::Button("OK", ImVec2(120, 0)))
-            {
-                const auto tex = m_p_windows->m_p_resource->LoadTexture(path.string().c_str());
-                auto* texture = m_p_windows->m_p_resource->GetTexture(tex);
-                m_p_windows->m_assetWin.AddTextureData(texture);
-                ApplyTextureToMesh(texture);
-                m_texturePaths.pop(); m_open = true;
-                ImGui::CloseCurrentPopup();
-            }
-            ImGui::SetItemDefaultFocus();
-            ImGui::SameLine();
-            if (ImGui::Button("Cancel", ImVec2(120, 0)))
-            {
-                m_texturePaths.pop(); m_open = true;
-                ImGui::CloseCurrentPopup();
-            }
+            auto func = [&](::Texture* texture) {this->ApplyTextureToMesh(texture); };
+            ModalContents(func);
             ImGui::EndPopup();
         }
 
@@ -650,31 +712,49 @@ namespace GUIWindow
         ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
         if (ImGui::BeginPopupModal("Import Texture To All Meshes", NULL, ImGuiWindowFlags_AlwaysAutoResize))
         {
-            const std::filesystem::path path{ m_texturePaths.front() };
-            ImGui::TextUnformatted(path.filename().string().c_str());
-            m_texTypeDropDown.Combo();
-            ImGui::Separator();
-            if (ImGui::Button("OK", ImVec2(120, 0)))
-            {
-                const auto tex = m_p_windows->m_p_resource->LoadTexture(path.string().c_str());
-                auto* texture = m_p_windows->m_p_resource->GetTexture(tex);
-                m_p_windows->m_assetWin.AddTextureData(texture);
-                ApplyTextureToObject(texture);
-                m_texturePaths.pop(); m_open = true;
-                ImGui::CloseCurrentPopup();
-            }
-            ImGui::SetItemDefaultFocus();
-            ImGui::SameLine();
-            if (ImGui::Button("Cancel", ImVec2(120, 0)))
-            {
-                m_texturePaths.pop(); m_open = true;
-                ImGui::CloseCurrentPopup();
-            }
+            auto func = [&](::Texture* texture) {this->ApplyTextureToObject(texture); };
+            ModalContents(func);
             ImGui::EndPopup();
         }
     }
 
-    void TextureModal::ApplyTextureToMesh(Texture* p_texture) noexcept
+    void TextureModal::ModalContents(std::function<void(Texture*)> apply_func) noexcept
+    {
+        // Show dropped texture information
+        ImGui::TextUnformatted(m_p_texture->m_name.c_str());
+        ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(m_p_texture->Handle())), { 200, 200 }, { 0, 1 }, { 1, 0 });
+        m_texTypeDropDown.Combo();
+        ImGui::Separator();
+
+        ImGui::Checkbox("Apply", &m_applyTexture);
+        HelpMarker("Apply this texture to selected mesh on material window.\nIf mesh is not selected or Root is selected, the texture applies to all meshes of the object.");
+
+        if (ImGui::Button("OK", ImVec2(120, 0)))
+        {   // Import texture
+            if (m_isNewTexture)
+            {   
+                m_p_windows->m_p_resource->AddTexture(m_p_texture);
+                m_p_windows->m_assetWin.AddTextureData(m_p_texture);
+            }
+            if (m_applyTexture)
+                apply_func(m_p_texture);
+            m_texturePaths.pop(); m_open = true;
+            m_p_texture = nullptr;
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::SetItemDefaultFocus();
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel", ImVec2(120, 0)))
+        {   // Do not import texture
+            m_texturePaths.pop(); m_open = true;
+            delete m_p_texture;
+            m_p_texture = nullptr;
+            ImGui::CloseCurrentPopup();
+        }
+    }
+
+    void TextureModal::ApplyTextureToMesh(Texture* p_texture) const noexcept
     {
         ::Mesh* p_mesh = m_p_windows->m_materialWin.GetMesh();
         switch (m_texTypeDropDown.GetSelectedIndex())
@@ -687,44 +767,47 @@ namespace GUIWindow
         }
     }
 
-    void TextureModal::ApplyTextureToObject(Texture* p_texture) noexcept
+    void TextureModal::ApplyTextureToObject(Texture* p_texture) const noexcept
     {
         auto& meshes = m_p_object->m_p_model->m_meshes;
         switch (m_texTypeDropDown.GetSelectedIndex())
         {
-        case 1:
-        {
-            for (std::size_t i = 1; i < meshes.size(); ++i)
-                meshes[i].material.t_metallic = p_texture;
-        }
-        break;
-        case 2:
-        {
-            for (std::size_t i = 1; i < meshes.size(); ++i)
-                meshes[i].material.t_roughness = p_texture;
-        }
-        break;
-        case 3:
-        {
-            for (std::size_t i = 1; i < meshes.size(); ++i)
-                meshes[i].material.t_ao = p_texture;
-        }
-        break;
-        case 4:
-        {
-            for (std::size_t i = 1; i < meshes.size(); ++i)
-                meshes[i].material.t_normal = p_texture;
-        }
-        break;
-        default:
-        {
-            for (std::size_t i = 1; i < meshes.size(); ++i)
-                meshes[i].material.t_albedo = p_texture;
-        }
-        break;
+        case 1: { for (std::size_t i = 1; i < meshes.size(); ++i) meshes[i].material.t_metallic = p_texture; } break;
+        case 2: { for (std::size_t i = 1; i < meshes.size(); ++i) meshes[i].material.t_roughness = p_texture; } break;
+        case 3: { for (std::size_t i = 1; i < meshes.size(); ++i) meshes[i].material.t_ao = p_texture; } break;
+        case 4: { for (std::size_t i = 1; i < meshes.size(); ++i) meshes[i].material.t_normal = p_texture; } break;
+        default:{ for (std::size_t i = 1; i < meshes.size(); ++i) meshes[i].material.t_albedo = p_texture; } break;
         }
     }
 
     /* Texture Modal Window - end -------------------------------------------------------------------*/
+    /*-----------------------------------------------------------------------------------------------*/
+    /* Texture Preview Window - start ---------------------------------------------------------------*/
 
+    void TexturePreview::Update()
+    {
+        for(auto iter = m_textures.begin(); iter != m_textures.end();)
+        {
+            const ::Texture* p_texture = iter->first;
+            ImGui::Begin(p_texture->m_name.c_str(), &iter->second);
+            const auto& size = ImGui::GetContentRegionAvail();
+            const float min = std::min(size.x, size.y);
+            ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(p_texture->Handle())), { min, min }, { 0, 1 }, { 1, 0 });
+            ImGui::End();
+
+            iter = (iter->second) ? std::next(iter) : m_textures.erase(iter);
+        }
+    }
+
+    void TexturePreview::AddTexture(Texture* p_texture) noexcept
+    {
+        m_textures[p_texture] = true;
+        // Set initial window size and pos
+        ImGui::SetNextWindowSize({ 400, 400 });
+        ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), 0, ImVec2(0.5f, 0.5f));
+        ImGui::Begin(p_texture->m_name.c_str(), &m_textures[p_texture]);
+        ImGui::End();
+    }
+
+    /* Texture Preview Window - end -----------------------------------------------------------------*/
 }

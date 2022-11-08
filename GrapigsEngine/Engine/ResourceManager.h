@@ -83,6 +83,10 @@ public:
     unsigned LoadFbx(const char* path) noexcept;
     unsigned LoadTexture(const char* path) noexcept;
     unsigned LoadShaders(const std::vector<std::pair<ShaderType, std::filesystem::path>>& paths) noexcept;
+
+    void AddTexture(Texture* texture) noexcept;
+    Texture* GetTexture(const std::filesystem::path& path) const noexcept;
+
     Texture* GetTexture(const unsigned tag) noexcept;
     Object* CreateObject(unsigned mesh, unsigned shader, unsigned texture = ERROR_INDEX) noexcept;
     Object* CreateObject(const char* path) noexcept;

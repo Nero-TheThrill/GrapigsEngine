@@ -1,4 +1,5 @@
 #pragma once
+#include <functional>			// std::function
 #include <string>				// std::string
 #include <queue>				// std::queue
 #include <set>					// std::set
@@ -98,23 +99,24 @@ namespace GUIWindow
 		void SetObject(Object* p_object) noexcept override;
 		[[nodiscard]] ::Mesh* GetMesh() const noexcept;
 	private:
+		void DrawTexture(Texture* texture, const char* desc) noexcept;
 		std::string m_notice;
-		::Mesh* p_mesh = nullptr;
+		::Mesh* m_p_mesh = nullptr;
+		::Texture* m_p_clicked = nullptr;
 	};
 
 	class Asset final : public Window
 	{
 	public:
 		Asset(const char* name, WindowInst* p_inst) noexcept;
-		void Update() noexcept override;
 		void Content() noexcept override;
 		void SetObject(Object* p_object) noexcept override;
 		void AddModelData(const ::Model* p_model) noexcept;
-		void AddTextureData(const Texture* p_texture) noexcept;
+		void AddTextureData(Texture* p_texture) noexcept;
 	private:
 		DropDown m_modelDD, m_textureDD;
 		std::set<unsigned> m_modelTags, m_textureTags;
-		intptr_t m_texID;
+		::Texture* m_p_texture;
 	};
 
 	class TextureModal : public Window
@@ -126,12 +128,24 @@ namespace GUIWindow
 		void Update() noexcept override;
 		void Content() noexcept override;
 	private:
-		void OpenTextureModal() const noexcept;
-		void ApplyTextureToMesh(Texture* p_texture) noexcept;
-		void ApplyTextureToObject(Texture* p_texture) noexcept;
+		void OpenTextureModal() noexcept;
+		void ModalContents(std::function<void(::Texture*)> apply_func) noexcept;
+		void ApplyTextureToMesh(Texture* p_texture) const noexcept;
+		void ApplyTextureToObject(Texture* p_texture) const noexcept;
 
+		bool m_isNewTexture, m_applyTexture;
+		::Texture* m_p_texture;
 		std::queue<std::filesystem::path> m_texturePaths;
 		DropDown m_texTypeDropDown;
+	};
+
+	class TexturePreview
+	{
+	public:
+		void Update();
+		void AddTexture(::Texture* p_texture) noexcept;
+	private:
+		std::map<::Texture*, bool> m_textures;
 	};
 
 	struct WindowInst
@@ -146,6 +160,7 @@ namespace GUIWindow
 		TextureModal m_textureModal;
 		Asset m_assetWin;
 		GizmoTool m_gizmoToolWin;
+		TexturePreview m_texturePreview;
 		ResourceManager* m_p_resource;
 	};
 }

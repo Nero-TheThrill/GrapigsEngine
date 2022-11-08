@@ -7,6 +7,7 @@
 #include "ResourceManager.h"
 
 #include <iostream>
+#include <ranges>   // std::views::
 #include "Input.h"
 
  /* Light - start --------------------------------------------------------------------------------*/
@@ -206,14 +207,12 @@ unsigned ResourceManager::LoadTexture(const char* path) noexcept
 {
     // If it is already exist, load existing texture
     const std::filesystem::path file_path{ path };
-    for (const auto& m : m_textures)
-    {
-        if (m.second->m_path == file_path)
-            return m.second->m_tag;
-    }
+    Texture* texture = GetTexture(file_path);
+    if (texture)
+        return texture->m_tag;
 
     // Load texture
-    auto* texture = new Texture(path);
+    texture = new Texture(path);
     if(texture->m_initialized)
     {
         const auto tag = static_cast<unsigned>(m_textures.size());
@@ -232,6 +231,27 @@ unsigned ResourceManager::LoadShaders(const std::vector<std::pair<ShaderType, st
     const_cast<unsigned&>(program->m_tag) = tag;
     m_shaders[tag] = program;
     return tag;
+}
+
+void ResourceManager::AddTexture(Texture* texture) noexcept
+{
+    unsigned tag = texture->m_tag;
+    while(m_textures.contains(tag))
+    {
+        tag++;
+    }
+    const_cast<unsigned&>(texture->m_tag) = tag;
+    m_textures[tag] = texture;
+}
+
+Texture* ResourceManager::GetTexture(const std::filesystem::path& path) const noexcept
+{
+    for (const auto& m : std::views::values(m_textures))
+    {
+        if (m->m_path == path)
+            return m;
+    }
+    return nullptr;
 }
 
 Texture* ResourceManager::GetTexture(const unsigned tag) noexcept

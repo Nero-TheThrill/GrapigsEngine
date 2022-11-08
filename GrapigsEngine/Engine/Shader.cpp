@@ -355,6 +355,8 @@ Texture::~Texture() noexcept
 	glDeleteTextures(1, &m_handle);
 	m_handle = 0;
 	m_unit = 0;
+	if (m_unit + 1 == s_textureCount)
+		s_textureCount--;
 }
 
 unsigned Texture::Unit() const noexcept
