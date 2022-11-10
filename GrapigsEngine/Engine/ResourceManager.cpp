@@ -309,8 +309,8 @@ void ResourceManager::CreateSkyBox() noexcept
     {
         glm::vec3(1,0,0),
         glm::vec3(-1,0,0),
-        glm::vec3(0,1,0),
-        glm::vec3(0,-1,0),
+        glm::vec3(0,1,0.0001),
+        glm::vec3(0,-1,0.0001),
         glm::vec3(0,0,1),
         glm::vec3(0,0,-1),
     };

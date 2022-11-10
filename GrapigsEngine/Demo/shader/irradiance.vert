@@ -22,5 +22,5 @@ void main()
 {
     normal = vNormal.xyz;
     pos = vPosition.xyz;
-    gl_Position =  u_trans.worldToNDC * u_modelToWorld * u_localToModel * vPosition;
+    gl_Position =  u_trans.cameraToNDC * mat4(mat3(u_trans.worldToCamera))* mat4(mat3(u_localToModel))  * vPosition;
 }
