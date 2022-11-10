@@ -3,7 +3,7 @@
 layout (location=0) in vec4 vPosition;
 layout (location=1) in vec4 vNormal;
 
-layout (location=0) out vec3 normal;
+layout (location=0) out vec3 pos;
 
 layout (std140, binding=0) uniform Transform
 {
@@ -16,10 +16,10 @@ layout (std140, binding=0) uniform Transform
 } u_trans;
 
 uniform mat4 u_localToModel;
-
+uniform mat4 u_modelToWorld;
 
 void main()
 {
-    normal = vNormal.xyz;
-    gl_Position =  u_trans.cameraToNDC * mat4(mat3(u_trans.worldToCamera))* mat4(mat3(u_localToModel))  * vPosition;
+    pos = vPosition.xyz;
+    gl_Position = vec4(u_trans.cameraToNDC * mat4(mat3(u_trans.worldToCamera)) * u_localToModel*vPosition).xyww; 
 }

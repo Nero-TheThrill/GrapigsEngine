@@ -5,7 +5,7 @@ layout (location=1) in vec3 position;
 layout (location=2) in vec2 texcoord;
 layout (location=0) out vec4 output_color;
 
-uniform samplerCube t_ibl;
+uniform samplerCube t_irradiance;
 uniform sampler2D t_brdflut;
 
 uniform vec3 u_albedo;
@@ -153,7 +153,12 @@ vec3 CalculateFinalColor()
 
 	    finalColor += (kD * albedo / PI + specular) * radiance * NdotL;
 	}
-	finalColor += ao * albedo * vec3(0.03);
+ 	vec3 kS = fresnelSchlick(max(dot(normal, viewDirection), 0.0), baseReflectivity);
+    vec3 kD = 1.0 - kS;
+	vec3 irradiance = texture(t_irradiance, normal).xyz;
+ 	vec3 diffuse      = irradiance * albedo;
+    vec3 ambient = (kD * diffuse) * ao;
+    finalColor+=ambient;
 	finalColor = finalColor/(finalColor+vec3(1.0));
 	finalColor = pow(finalColor, vec3(1.0/2.2)); 
 	return finalColor;

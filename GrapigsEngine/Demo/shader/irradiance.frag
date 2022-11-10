@@ -8,11 +8,11 @@ uniform samplerCube t_ibl;
 const float PI = 3.14159265359;
 void main()
 {	
-    vec3 N = normalize(pos);
+    vec3 N = normalize(normal);
     vec3 irradiance = vec3(0.0);
     vec3 up    = vec3(0.0, 1.0, 0.0);
-    vec3 right = normalize(cross(up, normal));
-    up = normalize(cross(normal, right));
+    vec3 right = normalize(cross(up, N));
+    up = normalize(cross(N, right));
 
     float sampleDelta = 0.025;
     float nrSamples = 0.0; 
@@ -30,6 +30,6 @@ void main()
         }
     }
     irradiance = PI * irradiance * (1.0 / float(nrSamples));
-    output_color = texture(t_ibl,normal);//vec4(irradiance, 1);
+    output_color = vec4(irradiance, 1);
 }
 

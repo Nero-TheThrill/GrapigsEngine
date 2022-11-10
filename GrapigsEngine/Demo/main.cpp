@@ -63,7 +63,7 @@ int main(void)
 	GUI gui(resource);
 	Lights* lights = CreateLights();
 
-	Object* obj = CreateObject(resource, "shader/test.vert", "shader/test.frag", "model/PenguinBaseMesh.fbx", "texture/Penguin.png");
+	Object* obj = CreateObject(resource, "shader/test.vert", "shader/test.frag", "model/can.fbx", "texture/can/can_crushed_highpoly_BaseColor_2k.png");
 
 	gui.SetObject(obj);
 	

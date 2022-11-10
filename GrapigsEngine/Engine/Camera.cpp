@@ -15,7 +15,7 @@
 
 Camera::Camera() noexcept
 	:
-	m_near(0.1f), m_far(100), m_fov(60),
+	m_near(0.1f), m_far(100), m_fov(90),
 	m_eye(0, 0, 3),
 	m_right(1, 0, 0),
 	m_up(0, 1, 0),
@@ -147,7 +147,7 @@ void Camera::UpdateMatrix() noexcept
 /* CameraBuffer - start -------------------------------------------------------------------------*/
 
 unsigned CameraBuffer::s_m_handle = 0;
-float CameraBuffer::s_m_aspectRatio = 1000.f / 1000.f;
+float CameraBuffer::s_m_aspectRatio = 1200.f / 900.f;
 Camera* CameraBuffer::s_m_camera = nullptr;
 
 void CameraBuffer::Clear() noexcept
@@ -200,6 +200,7 @@ void CameraBuffer::UpdateMainCamera() noexcept
 
 	if (Input::IsKeyReleased(Keyboard::R))
 		s_m_camera->Reset();
+	s_m_camera->UpdateMatrix();
 }
 
 Camera* CameraBuffer::GetMainCamera() noexcept

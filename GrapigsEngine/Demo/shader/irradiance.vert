@@ -20,7 +20,7 @@ uniform mat4 u_localToModel;
 uniform mat4 u_modelToWorld;
 void main()
 {
-    normal = vNormal.xyz;
-    pos = vPosition.xyz;
-    gl_Position =  u_trans.cameraToNDC * mat4(mat3(u_trans.worldToCamera))* mat4(mat3(u_localToModel))  * vPosition;
+    normal = (u_modelToWorld*u_localToModel*vNormal).xyz;
+    pos = vec4( u_localToModel*vPosition).xyz;
+    gl_Position =  vec4(u_trans.cameraToNDC *u_trans.worldToCamera *vec4(pos,1.0)).xyzw; 
 }
