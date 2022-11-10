@@ -298,7 +298,7 @@ Object* ResourceManager::CreateObject(const char* path) noexcept
 void ResourceManager::CreateSkyBox() noexcept
 {
     m_skybox = new Object();
-    m_skybox->m_p_model = m_models[LoadFbx("model/cube.fbx")];
+    m_skybox->m_p_model = m_models[LoadFbx("model/skycube.fbx")];
 
     const std::vector<std::pair<ShaderType, std::filesystem::path>> shader_files = {
             std::make_pair(ShaderType::Vertex, "shader/skybox.vert"),
