@@ -69,7 +69,7 @@ private:
 
 enum class TextureType
 {
-	Default = 0, IBL, BRDF
+	Default = 0, IBL, BRDF, Irradiance
 };
 
 class Texture
@@ -95,6 +95,7 @@ class CubeMapTexture final : public Texture
 {
 public:
 	CubeMapTexture(std::vector<std::filesystem::path> file_path) noexcept;
+	CubeMapTexture() noexcept;
 private:
 	const std::vector<std::filesystem::path> m_paths;
 };
@@ -109,6 +110,27 @@ public:
 	void Clear() noexcept;
 	void Bind() const noexcept;
 	void UnBind() const noexcept;
+
+	void Bind_forIrradianceMap(CubeMapTexture texture, unsigned i) const noexcept;
+
+	[[nodiscard]] unsigned GetTexture() const noexcept;
+private:
+	const unsigned unit = 0;
+	unsigned m_fboHandle, m_rboHandle, m_texture;
+};
+
+class FrameBufferObject1
+{
+public:
+	FrameBufferObject1();
+	~FrameBufferObject1();
+
+	void Init(int width, int height) noexcept;
+	void Clear() noexcept;
+	void Bind() const noexcept;
+	void UnBind() const noexcept;
+
+	void Bind_forIrradianceMap(CubeMapTexture texture, unsigned i) const noexcept;
 
 	[[nodiscard]] unsigned GetTexture() const noexcept;
 private:

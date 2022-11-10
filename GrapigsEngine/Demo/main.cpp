@@ -42,16 +42,16 @@ void DragAndDrop(ResourceManager* r, GUI* g, Object* o)
 	}
 }
 
-Object* CreateObject(ResourceManager* r)
+Object* CreateObject(ResourceManager* r, const std::string& vertex_shader, const std::string& fragment_shader, const std::string& model_path, const std::string& texture_path )
 {
 	const std::vector<std::pair<ShaderType, std::filesystem::path>> shader_files = {
-			std::make_pair(ShaderType::Vertex, "shader/test.vert"),
-			std::make_pair(ShaderType::Fragment, "shader/test.frag")
+			std::make_pair(ShaderType::Vertex, vertex_shader),
+			std::make_pair(ShaderType::Fragment, fragment_shader)
 	};
 
 	unsigned shaderTag = r->LoadShaders(shader_files);
-	unsigned modelTag = r->LoadFbx("model/PenguinBaseMesh.fbx");
-	unsigned textureTag = r->LoadTexture("texture/Penguin.png");
+	unsigned modelTag = r->LoadFbx(model_path.c_str());
+	unsigned textureTag = r->LoadTexture(texture_path.c_str());
 	return r->CreateObject(modelTag, shaderTag, textureTag);
 }
 
@@ -63,7 +63,8 @@ int main(void)
 	GUI gui(resource);
 	Lights* lights = CreateLights();
 
-	Object* obj = CreateObject(resource);
+	Object* obj = CreateObject(resource, "shader/test.vert", "shader/test.frag", "model/PenguinBaseMesh.fbx", "texture/Penguin.png");
+
 	gui.SetObject(obj);
 	
 	while(application.ShouldQuit() == false)
@@ -76,6 +77,7 @@ int main(void)
 		}
 		gui.Update();
 		lights->Update();
+
 		resource->DrawTriangles();
 
 		application.EndUpdate();

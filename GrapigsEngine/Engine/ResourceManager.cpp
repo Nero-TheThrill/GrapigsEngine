@@ -8,6 +8,8 @@
 
 #include <iostream>
 #include <ranges>   // std::views::
+
+#include "Camera.h"
 #include "Input.h"
 
  /* Light - start --------------------------------------------------------------------------------*/
@@ -123,7 +125,7 @@ void Object::Draw(Primitive primitive, const std::map<TextureType, unsigned>& te
 {
     m_p_shader->Use();
 
-    m_p_shader->SendUniform("t_ibl", textures.find(TextureType::IBL)->second);
+    m_p_shader->SendUniform("t_ibl", textures.find(TextureType::Irradiance)->second);
     m_p_shader->SendUniform("t_brdflut", textures.find(TextureType::BRDF)->second);
     m_p_shader->SendUniform("u_color", m_color);
     m_p_shader->SendUniform("u_modelToWorld", m_transform.GetTransformMatrix());
@@ -139,8 +141,9 @@ void Object::Draw(Primitive primitive, const std::map<TextureType, unsigned>& te
 FrameBufferObject* ResourceManager::m_fbo = new FrameBufferObject();
 
 ResourceManager::ResourceManager() :
-	m_grid(new Grid(3, 10)),
+    m_grid(new Grid(3, 10)),
     m_object(nullptr),
+    m_skybox(nullptr),
     m_cubemap({
         "texture/skybox/right.jpg",
         "texture/skybox/left.jpg",
@@ -148,13 +151,16 @@ ResourceManager::ResourceManager() :
         "texture/skybox/bottom.jpg",
         "texture/skybox/front.jpg",
         "texture/skybox/back.jpg" }),
-    m_brdf("texture/brdf.png")
+        m_irradiancemap(),
+        m_brdf("texture/brdf.png")
 {
     const glm::ivec2& size = Input::s_m_windowSize;
     m_fbo->Init(size.x, size.y);
 
     m_texUnit[TextureType::IBL] = m_cubemap.Unit();
     m_texUnit[TextureType::BRDF] = m_brdf.Unit();
+
+    CreateSkyBox();
 }
 
 ResourceManager::~ResourceManager()
@@ -289,6 +295,60 @@ Object* ResourceManager::CreateObject(const char* path) noexcept
     return m_object;
 }
 
+void ResourceManager::CreateSkyBox() noexcept
+{
+    m_skybox = new Object();
+
+    m_skybox->m_p_model = m_models[LoadFbx("model/cube.fbx")];
+
+    const std::vector<std::pair<ShaderType, std::filesystem::path>> shader_files = {
+            std::make_pair(ShaderType::Vertex, "shader/skybox.vert"),
+            std::make_pair(ShaderType::Fragment, "shader/skybox.frag")
+    };
+    m_skybox->m_p_shader = m_shaders[LoadShaders(shader_files)];
+    glm::vec3 views[] =
+    {
+        glm::vec3(1,0,0),
+        glm::vec3(-1,0,0),
+        glm::vec3(0,1,0),
+        glm::vec3(0,-1,0),
+        glm::vec3(0,0,1),
+        glm::vec3(0,0,-1),
+    };
+    const std::vector<std::pair<ShaderType, std::filesystem::path>> files = {
+       std::make_pair(ShaderType::Vertex, "shader/irradiance.vert"),
+       std::make_pair(ShaderType::Fragment, "shader/irradiance.frag")
+    };
+
+    ShaderProgram* program = new ShaderProgram(files);
+    program->Use();
+    for (int i = 0; i < 6; i++)
+    {
+        CameraBuffer::s_m_camera->Set(views[i]);
+        m_fbo->Bind_forIrradianceMap(m_irradiancemap, i);
+        GenerateIrradianceMap(program);
+        m_fbo->UnBind();
+    }
+
+    program->UnUse();
+    delete program;
+
+    m_texUnit[TextureType::Irradiance] = m_irradiancemap.Unit();
+}
+
+void ResourceManager::GenerateIrradianceMap(ShaderProgram* program) noexcept
+{
+    program->SendUniform("t_ibl", m_texUnit.find(TextureType::IBL)->second);
+    program->SendUniform("u_modelToWorld", m_skybox->m_transform.GetTransformMatrix());
+    m_skybox->m_p_model->Draw(Primitive::Triangles, program);
+
+}
+
+void ResourceManager::DrawSkyBox() const noexcept
+{
+    m_skybox->Draw(Primitive::Triangles, m_texUnit);
+}
+
 
 void ResourceManager::DrawLines() const noexcept
 {
@@ -299,6 +359,10 @@ void ResourceManager::DrawLines() const noexcept
 void ResourceManager::DrawTriangles() const noexcept
 {
     m_fbo->Bind();
+    glDepthMask(GL_FALSE);
+    DrawSkyBox();
+    glDepthMask(GL_TRUE);
+
     m_grid->Draw();
     m_object->Draw(Primitive::Triangles, m_texUnit);
     m_fbo->UnBind();
