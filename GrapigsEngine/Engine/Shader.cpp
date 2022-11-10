@@ -402,7 +402,8 @@ CubeMapTexture::CubeMapTexture() noexcept : Texture("cube-map", false)
 	glBindTexture(GL_TEXTURE_CUBE_MAP, m_handle);
 	for (unsigned int i = 0; i < 6; ++i)
 	{
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, 32, 32, 0,
+		constexpr GLsizei size = 32;
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, size, size, 0,
 			GL_RGB, GL_FLOAT, nullptr);
 	}
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -417,7 +418,7 @@ CubeMapTexture::CubeMapTexture() noexcept : Texture("cube-map", false)
 }
 
 FrameBufferObject::FrameBufferObject() 
-	: m_fboHandle(0), m_rboHandle(0), m_texture(0)
+	: m_unit(Texture::s_textureCount++), m_fboHandle(0), m_rboHandle(0), m_texture(0)
 {
 }
 
@@ -426,33 +427,53 @@ FrameBufferObject::~FrameBufferObject()
 	Clear();
 }
 
-void FrameBufferObject::Init(int width, int height) noexcept
+void FrameBufferObject::Init(int width, int height, bool is_texture_2d) noexcept
 {
 	if (!m_fboHandle)
 		glCreateFramebuffers(1, &m_fboHandle);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_fboHandle);
 
-	if (!m_texture)
-		glCreateTextures(GL_TEXTURE_2D, 1, &m_texture);
-	glBindTexture(GL_TEXTURE_2D, m_texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_INT, 0);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	if(is_texture_2d)
+	{
+		if (!m_texture)
+			glCreateTextures(GL_TEXTURE_2D, 1, &m_texture);
+		glBindTexture(GL_TEXTURE_2D, m_texture);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_INT, 0);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	}
+	else // Cube map texture
+	{
+		if (!m_texture)
+			glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &m_texture);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, m_texture);
+		for (unsigned int i = 0; i < 6; ++i)
+		{
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, width, height, 0,
+				GL_RGB, GL_FLOAT, nullptr);
+		}
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	}
+	glBindTextureUnit(m_unit, m_texture);
 
 	if (!m_rboHandle)
 		glGenRenderbuffers(1, &m_rboHandle);
 	glBindRenderbuffer(GL_RENDERBUFFER, m_rboHandle);
 
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
-	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_rboHandle);
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
 		std::cout << "[Frame Buffer Object]: Frame Buffer isn't complete" << std::endl;
 	}
-	glBindFramebuffer(GL_FRAMEBUFFER, unit);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 }
 
 void FrameBufferObject::Clear() noexcept
@@ -465,11 +486,9 @@ void FrameBufferObject::Clear() noexcept
 
 void FrameBufferObject::Bind() const noexcept
 {
-	static constexpr GLenum buffers[2] = { GL_COLOR_ATTACHMENT0, GL_DEPTH_ATTACHMENT };
 	glBindFramebuffer(GL_FRAMEBUFFER, m_fboHandle);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_texture, 0);
-	glDrawBuffers(2, buffers);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glNamedFramebufferTexture(m_fboHandle, GL_COLOR_ATTACHMENT0, m_texture, 0);
+	glClear(GL_DEPTH_BUFFER_BIT);
 }
 
 void FrameBufferObject::UnBind() const noexcept
@@ -477,26 +496,24 @@ void FrameBufferObject::UnBind() const noexcept
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void FrameBufferObject::Bind_forIrradianceMap(CubeMapTexture texture, unsigned i) const noexcept
+void FrameBufferObject::BindCubeMap(int index) const noexcept
 {
+	glViewport(0, 0, 512, 512);
+	const GLenum tex_target = GL_TEXTURE_CUBE_MAP_POSITIVE_X + index;
+	constexpr GLenum buffers[1] = { GL_COLOR_ATTACHMENT0 };
 
-	const GLenum buffers[2] = { GL_COLOR_ATTACHMENT0, GL_DEPTH_ATTACHMENT };
 	glBindFramebuffer(GL_FRAMEBUFFER, m_fboHandle);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, texture.Handle(), 0);
-	auto error = glGetError();
-	if (error == GL_INVALID_ENUM)
-	{
-		std::cout << "invalid enum" << std::endl;
-	}
-	if (error == GL_INVALID_OPERATION)
-	{
-		std::cout << "invalid operation" << std::endl;
-	}
-	glDrawBuffers(2, buffers);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, tex_target, m_texture, 0);
+	
+	if (const auto error = glGetError(); error == GL_INVALID_ENUM)
+		std::cout << "Invalid enum: " << index << std::endl;
+	else if (error == GL_INVALID_OPERATION)
+		std::cout << "Invalid operation: " << index << std::endl;
+	else if (error == GL_INVALID_VALUE)
+		std::cout << "Invalid value: " << index << std::endl;
+
+	glNamedFramebufferDrawBuffers(m_fboHandle, 1, buffers);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  
-
-
 }
 
 unsigned FrameBufferObject::GetTexture() const noexcept
@@ -504,80 +521,9 @@ unsigned FrameBufferObject::GetTexture() const noexcept
 	return m_texture;
 }
 
-FrameBufferObject1::FrameBufferObject1() : m_fboHandle(0), m_rboHandle(0), m_texture(0)
+unsigned FrameBufferObject::Unit() const noexcept
 {
-}
-
-FrameBufferObject1::~FrameBufferObject1()
-{
-	Clear();
-}
-
-void FrameBufferObject1::Init(int width, int height) noexcept
-{
-	if (!m_fboHandle)
-		glCreateFramebuffers(1, &m_fboHandle);
-	glBindFramebuffer(GL_FRAMEBUFFER, m_fboHandle);
-
-	if (!m_texture)
-		glCreateTextures(GL_TEXTURE_2D, 1, &m_texture);
-	glBindTexture(GL_TEXTURE_2D, m_texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_INT, 0);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-	if (!m_rboHandle)
-		glGenRenderbuffers(1, &m_rboHandle);
-	glBindRenderbuffer(GL_RENDERBUFFER, m_rboHandle);
-
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
-	glBindRenderbuffer(GL_RENDERBUFFER, 0);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_rboHandle);
-	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-	{
-		std::cout << "[Frame Buffer Object]: Frame Buffer isn't complete" << std::endl;
-	}
-	glBindFramebuffer(GL_FRAMEBUFFER, unit);
-}
-
-void FrameBufferObject1::Clear() noexcept
-{
-	glDeleteTextures(1, &m_texture);
-	glDeleteFramebuffers(1, &m_fboHandle);
-	glDeleteRenderbuffers(1, &m_rboHandle);
-	m_texture = m_fboHandle = m_rboHandle = 0;
-}
-
-void FrameBufferObject1::Bind() const noexcept
-{
-	const GLenum buffers[2] = { GL_COLOR_ATTACHMENT0, GL_DEPTH_ATTACHMENT };
-	glBindFramebuffer(GL_FRAMEBUFFER, m_fboHandle);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, texture.Handle(), 0);
-	auto error = glGetError();
-	if (error == GL_INVALID_ENUM)
-	{
-		std::cout << "invalid enum" << std::endl;
-	}
-	if (error == GL_INVALID_OPERATION)
-	{
-		std::cout << "invalid operation" << std::endl;
-	}
-	glDrawBuffers(2, buffers);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-}
-
-void FrameBufferObject1::UnBind() const noexcept
-{
-}
-
-void FrameBufferObject1::Bind_forIrradianceMap(CubeMapTexture texture, unsigned i) const noexcept
-{
-}
-
-unsigned FrameBufferObject1::GetTexture() const noexcept
-{
+	return m_unit;
 }
 
 /* Texture - end --------------------------------------------------------------------------------*/

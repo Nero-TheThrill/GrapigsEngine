@@ -105,7 +105,9 @@ private:
     std::map<unsigned, Texture*> m_textures;
     std::map<unsigned, Model*> m_models;
     std::map<unsigned, ShaderProgram*> m_shaders;
-    CubeMapTexture m_cubemap, m_irradiancemap;
+    CubeMapTexture m_cubemap;
     Texture m_brdf;
     std::map<TextureType, unsigned> m_texUnit;
+public:
+    FrameBufferObject m_irradianceMap;
 };

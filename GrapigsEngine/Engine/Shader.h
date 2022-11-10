@@ -75,6 +75,7 @@ enum class TextureType
 class Texture
 {
 public:
+	static unsigned s_textureCount;
 	Texture(const char* file_path, bool is_2d_texture = true) noexcept;
 	~Texture() noexcept;
 
@@ -86,7 +87,6 @@ public:
 	const std::string m_name;
 	const std::filesystem::path m_path;
 protected:
-	static unsigned s_textureCount;
 	unsigned m_handle = 0;
 	unsigned m_unit = 0;
 };
@@ -106,34 +106,15 @@ public:
 	FrameBufferObject();
 	~FrameBufferObject();
 
-	void Init(int width, int height) noexcept;
+	void Init(int width, int height, bool is_texture_2d = true) noexcept;
 	void Clear() noexcept;
 	void Bind() const noexcept;
 	void UnBind() const noexcept;
-
-	void Bind_forIrradianceMap(CubeMapTexture texture, unsigned i) const noexcept;
-
-	[[nodiscard]] unsigned GetTexture() const noexcept;
-private:
-	const unsigned unit = 0;
-	unsigned m_fboHandle, m_rboHandle, m_texture;
-};
-
-class FrameBufferObject1
-{
-public:
-	FrameBufferObject1();
-	~FrameBufferObject1();
-
-	void Init(int width, int height) noexcept;
-	void Clear() noexcept;
-	void Bind() const noexcept;
-	void UnBind() const noexcept;
-
-	void Bind_forIrradianceMap(CubeMapTexture texture, unsigned i) const noexcept;
+	void BindCubeMap(int index) const noexcept;
 
 	[[nodiscard]] unsigned GetTexture() const noexcept;
+	[[nodiscard]] unsigned Unit() const noexcept;
 private:
-	const unsigned unit = 0;
+	const unsigned m_unit;
 	unsigned m_fboHandle, m_rboHandle, m_texture;
 };
