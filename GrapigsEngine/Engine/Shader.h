@@ -76,7 +76,7 @@ class Texture
 {
 public:
 	static unsigned s_textureCount;
-	Texture(const char* file_path, bool is_2d_texture = true) noexcept;
+	Texture(const char* file_path, bool is_2d_texture = true, bool is_hdr = false) noexcept;
 	~Texture() noexcept;
 
 	[[nodiscard]] unsigned Unit() const noexcept;

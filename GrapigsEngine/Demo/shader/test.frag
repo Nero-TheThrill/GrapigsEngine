@@ -3,10 +3,12 @@
 layout (location=0) in vec3 normal;
 layout (location=1) in vec3 position;
 layout (location=2) in vec2 texcoord;
+layout (location=3) in vec3 localpos;
 layout (location=0) out vec4 output_color;
 
-uniform samplerCube t_irradiance;
+uniform sampler2D t_irradiance;
 uniform sampler2D t_brdflut;
+uniform sampler2D t_ibl;
 
 uniform vec3 u_albedo;
 uniform float u_metallic;
@@ -58,6 +60,14 @@ layout(std140, binding = 1) uniform LightInformation
 
 
 //----------------------------------PBR----------------------------------------//
+const vec2 invAtan = vec2(0.1591, 0.3183);
+vec2 SampleSphericalMap(vec3 v)
+{
+    vec2 uv = vec2(atan(v.z, v.x), asin(v.y));
+    uv *= invAtan;
+    uv += 0.5;
+    return uv;
+}
 
 float distributionGGX(float NdotH, float roughness)
 {
@@ -101,61 +111,10 @@ vec3 CalculateFinalColor()
 	vec3 finalColor = vec3(0);
 	vec3 viewDirection = normalize(u_trans.camPosition - position);
 	vec3 baseReflectivity = mix(vec3(0.04), albedo, metallic);
-	for(uint i=0; i < lightInfo.lightNum; i++) 
-	{	
-		Light light = lightInfo.lights[i];
-		vec3 lightVector = normalize(light.position - position);
-		vec3 halfwayVector = normalize(viewDirection+lightVector);
-		float distance = length(light.position - position);
-		float attenuation = min(1 / (light.c.x + light.c.y * distance + light.c.z * distance * distance), 1);
-		vec3 radiance = vec3(0);// = light.ambient * attenuation;
 
-		float NdotV = max(dot(normal, viewDirection),0.0000001);
-		float NdotL = max(dot(normal, lightVector),0.0000001);
-	    float HdotV = max(dot(halfwayVector, viewDirection),0.0);
-		float NdotH = max(dot(normal, halfwayVector),0.0);
-
-		float D = distributionGGX(NdotH, roughness);
-		float G = geometrySmith(NdotV, NdotL, roughness);
-		vec3 F = fresnelSchlick(HdotV, baseReflectivity);
-		vec3 specular = D * G * F;
-		specular /= 4.0 * NdotV * NdotL;
-		vec3 kD = vec3(1.0) - F;
-		kD *= 1.0 - metallic;
-
-		switch(light.type)
-		{
-			case 0:
-				radiance = light.ambient * attenuation;
-				break;
-			case 1:
-				radiance = light.ambient;
-				break;
-			case 2:
-			    float spotlighteffect = 0;
-			    float alpha = dot(-lightVector, normalize(light.direction)); 
-   				if(alpha < cos(light.outer_angle))
-    			{
-    				spotlighteffect = 0;
-   				}
-    			else if(alpha > cos(light.inner_angle))
-    			{
-    				spotlighteffect = 1;
-    			}
-    			else
-    			{
-    				spotlighteffect = pow((alpha - cos(light.outer_angle)) / (cos(light.inner_angle) - cos(light.outer_angle)), light.falloff);
-    			}
-				radiance = light.ambient * attenuation * spotlighteffect;
-				break;
-			default:
-		}
-
-	    finalColor += (kD * albedo / PI + specular) * radiance * NdotL;
-	}
  	vec3 kS = fresnelSchlick(max(dot(normal, viewDirection), 0.0), baseReflectivity);
     vec3 kD = 1.0 - kS;
-	vec3 irradiance = texture(t_irradiance, normal).xyz;
+	vec3 irradiance =  texture(t_irradiance, SampleSphericalMap(normalize(normal))).xyz;
  	vec3 diffuse      = irradiance * albedo;
     vec3 ambient = (kD * diffuse) * ao;
     finalColor+=ambient;

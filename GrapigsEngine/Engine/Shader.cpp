@@ -316,7 +316,7 @@ void ShaderProgram::PrintActiveUniforms() const noexcept
 
 unsigned Texture::s_textureCount = 1;
 
-Texture::Texture(const char* file_path, bool is_2d_texture) noexcept
+Texture::Texture(const char* file_path, bool is_2d_texture, bool is_hdr) noexcept
 	: m_initialized(false), m_name(std::filesystem::path{ file_path }.filename().string()), m_path(file_path)
 {
 	if(is_2d_texture)
@@ -343,6 +343,34 @@ Texture::Texture(const char* file_path, bool is_2d_texture) noexcept
 		glTextureParameteri(m_handle, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		glTextureParameteri(m_handle, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTextureParameteri(m_handle, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+		m_unit = s_textureCount++;
+		glBindTextureUnit(m_unit, m_handle);
+		const_cast<bool&>(m_initialized) = true;
+	}
+	if(is_hdr)
+	{
+		stbi_set_flip_vertically_on_load(true);
+		int width, height, channels;
+		float* data = stbi_loadf(m_path.string().c_str(), &width, &height, &channels, 0);
+		if (data == nullptr)
+		{
+			std::cout << "[Texture] Error: Unable to load " << m_path << std::endl;
+			return;
+		}
+
+		glGenTextures(1, &m_handle);
+		glBindTexture(GL_TEXTURE_2D, m_handle);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, data);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		stbi_image_free(data);
+
+
+
+
 
 		m_unit = s_textureCount++;
 		glBindTextureUnit(m_unit, m_handle);
@@ -437,7 +465,7 @@ void FrameBufferObject::Init(int width, int height, bool is_texture_2d) noexcept
 		if (!m_texture)
 			glCreateTextures(GL_TEXTURE_2D, 1, &m_texture);
 		glBindTexture(GL_TEXTURE_2D, m_texture);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_INT, 0);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, 0);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);

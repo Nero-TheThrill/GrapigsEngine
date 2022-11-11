@@ -4,8 +4,18 @@ layout (location=0) in vec3 normal;
 layout (location=1) in vec3 pos;
 layout (location=0) out vec4 output_color;
 
-uniform samplerCube t_ibl;
+uniform sampler2D t_ibl;
 const float PI = 3.14159265359;
+
+const vec2 invAtan = vec2(0.1591, 0.3183);
+vec2 SampleSphericalMap(vec3 v)
+{
+    vec2 uv = vec2(atan(v.z, v.x), asin(v.y));
+    uv *= invAtan;
+    uv += 0.5;
+    return uv;
+}
+
 void main()
 {	
     vec3 N = normalize(normal);
@@ -25,7 +35,7 @@ void main()
             // tangent space to world
             vec3 sampleVec = tangentSample.x * right + tangentSample.y * up + tangentSample.z * N; 
 
-            irradiance += texture(t_ibl, sampleVec).rgb * cos(theta) * sin(theta);
+            irradiance += texture(t_ibl, SampleSphericalMap(normalize(sampleVec))).rgb * cos(theta) * sin(theta);
             nrSamples++;
         }
     }

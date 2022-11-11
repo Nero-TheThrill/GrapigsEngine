@@ -146,19 +146,22 @@ ResourceManager::ResourceManager() :
     m_object(nullptr),
     m_skybox(nullptr),
     m_cubemap({
-        "texture/skybox/right.jpg",
-        "texture/skybox/left.jpg",
-        "texture/skybox/top.jpg",
-        "texture/skybox/bottom.jpg",
-        "texture/skybox/front.jpg",
-        "texture/skybox/back.jpg" }),
-    m_brdf("texture/brdf.png")
+        "texture/skybox1/posx.jpg",
+        "texture/skybox1/negx.jpg",
+        "texture/skybox1/posy.jpg",
+        "texture/skybox1/negy.jpg",
+        "texture/skybox1/posz.jpg",
+        "texture/skybox1/negz.jpg" }),
+    m_brdf("texture/brdf.png"),
+    m_hdr("texture/skybox/BasketballCourt_3k.hdr",false,true),
+    m_environment("texture/skybox/BasketballCourt_Env.hdr", false, true)
 {
     const glm::ivec2& size = Input::s_m_windowSize;
     m_fbo->Init(size.x, size.y);
     m_irradianceMap.Init(512, 512, false);
 
-    m_texUnit[TextureType::IBL] = m_cubemap.Unit();
+    m_texUnit[TextureType::IBL] = m_hdr.Unit();
+    m_texUnit[TextureType::Irradiance] = m_environment.Unit();
     m_texUnit[TextureType::BRDF] = m_brdf.Unit();
 
     glDepthFunc(GL_LEQUAL);
@@ -308,46 +311,7 @@ void ResourceManager::CreateSkyBox() noexcept
             std::make_pair(ShaderType::Fragment, "shader/skybox.frag")
     };
     m_skybox->m_p_shader = m_shaders[LoadShaders(shader_files)];
-    constexpr glm::vec3 views[] =
-    {
-        glm::vec3(-1,0,0),
-        glm::vec3(1,0,0),
-        glm::vec3(0,-1,-0.000001),
-        glm::vec3(0,1,0.000001),
-        glm::vec3(0,0,-1),
-        glm::vec3(0,0,1),
-    };
-    const std::vector<std::pair<ShaderType, std::filesystem::path>> files = {
-       std::make_pair(ShaderType::Vertex, "shader/irradiance.vert"),
-       std::make_pair(ShaderType::Fragment, "shader/irradiance.frag")
-    };
-    CameraBuffer::s_m_camera->Set(views[0]);
-    CameraBuffer::s_m_aspectRatio = 1.0f;
-    CameraBuffer::Bind();
-    CameraBuffer::UpdateMatrix();
-
-    auto* program = new ShaderProgram(files);
-    program->Use();
-    for (int i = 0; i < 6; i++)
-    {
-        CameraBuffer::s_m_camera->Set(views[i]);
-        CameraBuffer::s_m_aspectRatio = 1.0f;
-        CameraBuffer::Bind();
-        CameraBuffer::UpdateMatrix();
-        m_irradianceMap.BindCubeMap(i);
-        GenerateIrradianceMap(program);
-    }
-    m_irradianceMap.UnBind();
-    program->UnUse();
-    delete program;
-
-    const auto& size = Input::s_m_windowSize;
-    glViewport(0, 0, size.x, size.y);
-    CameraBuffer::s_m_aspectRatio = 1200.f/900.f;
-
-    CameraBuffer::Bind();
-    CameraBuffer::UpdateMatrix();
-    m_texUnit[TextureType::Irradiance] = m_irradianceMap.Unit();
+  
 }
 
 void ResourceManager::GenerateIrradianceMap(ShaderProgram* program) noexcept
