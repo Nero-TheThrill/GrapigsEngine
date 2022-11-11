@@ -69,7 +69,7 @@ private:
 
 enum class TextureType
 {
-	Default = 0, IBL, BRDF, Irradiance
+	Default = 0, IBL, BRDF, Irradiance, Environment
 };
 
 class Texture
@@ -106,11 +106,10 @@ public:
 	FrameBufferObject();
 	~FrameBufferObject();
 
-	void Init(int width, int height, bool is_texture_2d = true) noexcept;
+	void Init(int width, int height) noexcept;
 	void Clear() noexcept;
 	void Bind() const noexcept;
 	void UnBind() const noexcept;
-	void BindCubeMap(int index) const noexcept;
 
 	[[nodiscard]] unsigned GetTexture() const noexcept;
 	[[nodiscard]] unsigned Unit() const noexcept;

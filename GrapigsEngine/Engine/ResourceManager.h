@@ -92,7 +92,6 @@ public:
     Object* CreateObject(const char* path) noexcept;
     
     void CreateSkyBox() noexcept;
-    void GenerateIrradianceMap(ShaderProgram* program) noexcept;
 
     void DrawSkyBox() const noexcept;
     void DrawLines() const noexcept;
@@ -105,9 +104,7 @@ private:
     std::map<unsigned, Texture*> m_textures;
     std::map<unsigned, Model*> m_models;
     std::map<unsigned, ShaderProgram*> m_shaders;
-    CubeMapTexture m_cubemap;
-    Texture m_brdf, m_hdr, m_environment;
+    Texture m_brdf, m_hdr, m_environment,m_irradiance;
     std::map<TextureType, unsigned> m_texUnit;
 public:
-    FrameBufferObject m_irradianceMap;
 };

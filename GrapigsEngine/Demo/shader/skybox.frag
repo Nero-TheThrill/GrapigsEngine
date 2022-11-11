@@ -4,7 +4,7 @@ layout (location=0) in vec3 pos;
 
 layout (location=0) out vec4 output_color;
 
-uniform sampler2D t_ibl;
+uniform sampler2D t_environment;
 const vec2 invAtan = vec2(0.1591, 0.3183);
 vec2 SampleSphericalMap(vec3 v)
 {
@@ -17,6 +17,6 @@ vec2 SampleSphericalMap(vec3 v)
 void main()
 {	
 
-    output_color = texture(t_ibl, SampleSphericalMap(normalize(pos)));
+    output_color = texture(t_environment, SampleSphericalMap(normalize(pos)));
 }
 

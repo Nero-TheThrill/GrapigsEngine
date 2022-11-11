@@ -128,6 +128,7 @@ void Object::Draw(Primitive primitive, const std::map<TextureType, unsigned>& te
     m_p_shader->SendUniform("t_ibl", textures.find(TextureType::IBL)->second);
     m_p_shader->SendUniform("t_irradiance", textures.find(TextureType::Irradiance)->second);
     m_p_shader->SendUniform("t_brdflut", textures.find(TextureType::BRDF)->second);
+    m_p_shader->SendUniform("t_environment", textures.find(TextureType::Environment)->second);
     m_p_shader->SendUniform("u_color", m_color);
     m_p_shader->SendUniform("u_modelToWorld", m_transform.GetTransformMatrix());
     m_p_model->Draw(primitive, m_p_shader);
@@ -145,24 +146,18 @@ ResourceManager::ResourceManager() :
     m_grid(new Grid(3, 10)),
     m_object(nullptr),
     m_skybox(nullptr),
-    m_cubemap({
-        "texture/skybox1/posx.jpg",
-        "texture/skybox1/negx.jpg",
-        "texture/skybox1/posy.jpg",
-        "texture/skybox1/negy.jpg",
-        "texture/skybox1/posz.jpg",
-        "texture/skybox1/negz.jpg" }),
     m_brdf("texture/brdf.png"),
     m_hdr("texture/skybox/BasketballCourt_3k.hdr",false,true),
-    m_environment("texture/skybox/BasketballCourt_Env.hdr", false, true)
+    m_environment("texture/skybox/BasketballCourt_8k.jpg"),
+    m_irradiance("texture/skybox/BasketballCourt_Env.hdr", false, true)
 {
     const glm::ivec2& size = Input::s_m_windowSize;
     m_fbo->Init(size.x, size.y);
-    m_irradianceMap.Init(512, 512, false);
 
     m_texUnit[TextureType::IBL] = m_hdr.Unit();
-    m_texUnit[TextureType::Irradiance] = m_environment.Unit();
+    m_texUnit[TextureType::Irradiance] = m_irradiance.Unit();
     m_texUnit[TextureType::BRDF] = m_brdf.Unit();
+    m_texUnit[TextureType::Environment] = m_environment.Unit();
 
     glDepthFunc(GL_LEQUAL);
     CreateSkyBox();
@@ -312,13 +307,6 @@ void ResourceManager::CreateSkyBox() noexcept
     };
     m_skybox->m_p_shader = m_shaders[LoadShaders(shader_files)];
   
-}
-
-void ResourceManager::GenerateIrradianceMap(ShaderProgram* program) noexcept
-{
-    program->SendUniform("t_ibl", m_texUnit.find(TextureType::IBL)->second);
-    program->SendUniform("u_modelToWorld", m_skybox->m_transform.GetTransformMatrix());
-    m_skybox->m_p_model->Draw(Primitive::Triangles, program);
 }
 
 void ResourceManager::DrawSkyBox() const noexcept
