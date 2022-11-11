@@ -200,7 +200,6 @@ void CameraBuffer::UpdateMainCamera() noexcept
 
 	if (Input::IsKeyReleased(Keyboard::R))
 		s_m_camera->Reset();
-	s_m_camera->UpdateMatrix();
 }
 
 Camera* CameraBuffer::GetMainCamera() noexcept
@@ -225,6 +224,11 @@ glm::vec3 CameraBuffer::GetMouseRay() noexcept
 	const glm::mat4& invView = glm::inverse(s_m_camera->GetWorldToCameraMatrix());
 	const glm::vec3 pos = invView * (invProj * glm::vec4(Input::GetNormalizedMousePos(), 1));	
 	return glm::normalize(pos);
+}
+
+void CameraBuffer::UpdateMatrix() noexcept
+{
+	s_m_camera->UpdateMatrix();
 }
 
 /* CameraBuffer - end ---------------------------------------------------------------------------*/

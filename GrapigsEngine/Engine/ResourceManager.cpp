@@ -324,7 +324,7 @@ void ResourceManager::CreateSkyBox() noexcept
     CameraBuffer::s_m_camera->Set(views[0]);
     CameraBuffer::s_m_aspectRatio = 1.0f;
     CameraBuffer::Bind();
-    CameraBuffer::UpdateMainCamera();
+    CameraBuffer::UpdateMatrix();
 
     auto* program = new ShaderProgram(files);
     program->Use();
@@ -333,7 +333,7 @@ void ResourceManager::CreateSkyBox() noexcept
         CameraBuffer::s_m_camera->Set(views[i]);
         CameraBuffer::s_m_aspectRatio = 1.0f;
         CameraBuffer::Bind();
-        CameraBuffer::UpdateMainCamera();
+        CameraBuffer::UpdateMatrix();
         m_irradianceMap.BindCubeMap(i);
         GenerateIrradianceMap(program);
     }
@@ -346,7 +346,7 @@ void ResourceManager::CreateSkyBox() noexcept
     CameraBuffer::s_m_aspectRatio = 1200.f/900.f;
 
     CameraBuffer::Bind();
-    CameraBuffer::UpdateMainCamera();
+    CameraBuffer::UpdateMatrix();
     m_texUnit[TextureType::Irradiance] = m_irradianceMap.Unit();
 }
 
