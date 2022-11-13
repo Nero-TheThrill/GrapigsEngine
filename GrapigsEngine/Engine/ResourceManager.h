@@ -86,21 +86,25 @@ public:
 
     void AddTexture(Texture* texture) noexcept;
     Texture* GetTexture(const std::filesystem::path& path) const noexcept;
-
     Texture* GetTexture(const unsigned tag) noexcept;
+
     Object* CreateObject(unsigned mesh, unsigned shader, unsigned texture = ERROR_INDEX) noexcept;
     Object* CreateObject(const char* path) noexcept;
+    
+    void CreateSkyBox() noexcept;
+
+    void DrawSkyBox() const noexcept;
     void DrawLines() const noexcept;
     void DrawTriangles() const noexcept;
 
     static FrameBufferObject* m_fbo;
 private:
     Grid* m_grid;
-    Object* m_object;
+    Object* m_object, *m_skybox;
     std::map<unsigned, Texture*> m_textures;
     std::map<unsigned, Model*> m_models;
     std::map<unsigned, ShaderProgram*> m_shaders;
-    CubeMapTexture m_cubemap;
-    Texture m_brdf;
+    Texture m_brdf, m_hdr, m_environment,m_irradiance;
     std::map<TextureType, unsigned> m_texUnit;
+public:
 };

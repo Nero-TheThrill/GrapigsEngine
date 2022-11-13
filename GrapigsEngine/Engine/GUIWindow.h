@@ -149,6 +149,13 @@ namespace GUIWindow
 		std::map<::Texture*, bool> m_textures;
 	};
 
+	class TestWindow : public Window
+	{
+	public:
+		TestWindow(const char* name, WindowInst* p_inst) noexcept;
+		void Content() noexcept override;
+	};
+
 	struct WindowInst
 	{
 		WindowInst(ResourceManager* p_resource) noexcept;
@@ -162,6 +169,7 @@ namespace GUIWindow
 		Asset m_assetWin;
 		GizmoTool m_gizmoToolWin;
 		TexturePreview m_texturePreview;
+		TestWindow m_testWin;
 		ResourceManager* m_p_resource;
 	};
 }

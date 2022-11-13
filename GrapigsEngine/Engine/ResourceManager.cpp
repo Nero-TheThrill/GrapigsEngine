@@ -8,6 +8,8 @@
 
 #include <iostream>
 #include <ranges>   // std::views::
+
+#include "Camera.h"
 #include "Input.h"
 
  /* Light - start --------------------------------------------------------------------------------*/
@@ -124,7 +126,9 @@ void Object::Draw(Primitive primitive, const std::map<TextureType, unsigned>& te
     m_p_shader->Use();
 
     m_p_shader->SendUniform("t_ibl", textures.find(TextureType::IBL)->second);
+    m_p_shader->SendUniform("t_irradiance", textures.find(TextureType::Irradiance)->second);
     m_p_shader->SendUniform("t_brdflut", textures.find(TextureType::BRDF)->second);
+    m_p_shader->SendUniform("t_environment", textures.find(TextureType::Environment)->second);
     m_p_shader->SendUniform("u_color", m_color);
     m_p_shader->SendUniform("u_modelToWorld", m_transform.GetTransformMatrix());
     m_p_model->Draw(primitive, m_p_shader);
@@ -139,22 +143,25 @@ void Object::Draw(Primitive primitive, const std::map<TextureType, unsigned>& te
 FrameBufferObject* ResourceManager::m_fbo = new FrameBufferObject();
 
 ResourceManager::ResourceManager() :
-	m_grid(new Grid(3, 10)),
+    m_grid(new Grid(3, 10)),
     m_object(nullptr),
-    m_cubemap({
-        "texture/skybox/right.jpg",
-        "texture/skybox/left.jpg",
-        "texture/skybox/top.jpg",
-        "texture/skybox/bottom.jpg",
-        "texture/skybox/front.jpg",
-        "texture/skybox/back.jpg" }),
-    m_brdf("texture/brdf.png")
+    m_skybox(nullptr),
+    m_brdf("texture/brdf.png"),
+    m_hdr("texture/skybox/BasketballCourt_3k.hdr",false,true),
+    m_environment("texture/skybox/BasketballCourt_8k.jpg"),
+    m_irradiance("texture/skybox/BasketballCourt_Env.hdr", false, true)
 {
     const glm::ivec2& size = Input::s_m_windowSize;
     m_fbo->Init(size.x, size.y);
 
-    m_texUnit[TextureType::IBL] = m_cubemap.Unit();
+    m_texUnit[TextureType::IBL] = m_hdr.Unit();
+    m_texUnit[TextureType::Irradiance] = m_irradiance.Unit();
     m_texUnit[TextureType::BRDF] = m_brdf.Unit();
+    m_texUnit[TextureType::Environment] = m_environment.Unit();
+
+    glDepthFunc(GL_LEQUAL);
+    CreateSkyBox();
+
 }
 
 ResourceManager::~ResourceManager()
@@ -289,6 +296,24 @@ Object* ResourceManager::CreateObject(const char* path) noexcept
     return m_object;
 }
 
+void ResourceManager::CreateSkyBox() noexcept
+{
+    m_skybox = new Object();
+    m_skybox->m_p_model = m_models[LoadFbx("model/skycube.fbx")];
+
+    const std::vector<std::pair<ShaderType, std::filesystem::path>> shader_files = {
+            std::make_pair(ShaderType::Vertex, "shader/skybox.vert"),
+            std::make_pair(ShaderType::Fragment, "shader/skybox.frag")
+    };
+    m_skybox->m_p_shader = m_shaders[LoadShaders(shader_files)];
+  
+}
+
+void ResourceManager::DrawSkyBox() const noexcept
+{
+    m_skybox->Draw(Primitive::Triangles, m_texUnit);
+}
+
 
 void ResourceManager::DrawLines() const noexcept
 {
@@ -299,6 +324,10 @@ void ResourceManager::DrawLines() const noexcept
 void ResourceManager::DrawTriangles() const noexcept
 {
     m_fbo->Bind();
+    glDepthMask(GL_FALSE);
+    DrawSkyBox();
+    glDepthMask(GL_TRUE);
+
     m_grid->Draw();
     m_object->Draw(Primitive::Triangles, m_texUnit);
     m_fbo->UnBind();

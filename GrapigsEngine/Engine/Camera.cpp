@@ -17,7 +17,7 @@
 Camera::Camera() noexcept
 	:
 	m_isUpdated(true),
-	m_near(0.1f), m_far(100), m_fov(60),
+	m_near(0.1f), m_far(100), m_fov(90),
 	m_eye(0, 0, 3),
 	m_right(1, 0, 0),
 	m_up(0, 1, 0),
@@ -216,7 +216,7 @@ void Camera::UpdateMatrix() noexcept
 /* CameraBuffer - start -------------------------------------------------------------------------*/
 
 unsigned CameraBuffer::s_m_handle = 0;
-float CameraBuffer::s_m_aspectRatio = 1000.f / 1000.f;
+float CameraBuffer::s_m_aspectRatio = 1200.f / 900.f;
 Camera* CameraBuffer::s_m_camera = nullptr;
 
 void CameraBuffer::Clear() noexcept
@@ -300,6 +300,11 @@ glm::vec3 CameraBuffer::GetMouseRay() noexcept
 	const glm::mat4& invView = glm::inverse(s_m_camera->GetWorldToCameraMatrix());
 	const glm::vec3 pos = invView * (invProj * glm::vec4(Input::GetNormalizedMousePos(), 1));	
 	return glm::normalize(pos);
+}
+
+void CameraBuffer::UpdateMatrix() noexcept
+{
+	s_m_camera->UpdateMatrix();
 }
 
 /* CameraBuffer - end ---------------------------------------------------------------------------*/

@@ -3,10 +3,12 @@
 layout (location=0) in vec3 normal;
 layout (location=1) in vec3 position;
 layout (location=2) in vec2 texcoord;
+layout (location=3) in vec3 localpos;
 layout (location=0) out vec4 output_color;
 
-uniform samplerCube t_ibl;
+uniform sampler2D t_irradiance;
 uniform sampler2D t_brdflut;
+uniform sampler2D t_ibl;
 
 uniform vec3 u_albedo;
 uniform float u_metallic;
@@ -58,6 +60,14 @@ layout(std140, binding = 1) uniform LightInformation
 
 
 //----------------------------------PBR----------------------------------------//
+const vec2 invAtan = vec2(0.1591, 0.3183);
+vec2 SampleSphericalMap(vec3 v)
+{
+    vec2 uv = vec2(atan(v.z, v.x), asin(v.y));
+    uv *= invAtan;
+    uv += 0.5;
+    return uv;
+}
 
 float distributionGGX(float NdotH, float roughness)
 {
@@ -101,7 +111,8 @@ vec3 CalculateFinalColor()
 	vec3 finalColor = vec3(0);
 	vec3 viewDirection = normalize(u_trans.camPosition - position);
 	vec3 baseReflectivity = mix(vec3(0.04), albedo, metallic);
-	for(uint i=0; i < lightInfo.lightNum; i++) 
+	
+	/*for(uint i=0; i < lightInfo.lightNum; i++) 
 	{	
 		Light light = lightInfo.lights[i];
 		vec3 lightVector = normalize(light.position - position);
@@ -152,8 +163,13 @@ vec3 CalculateFinalColor()
 		}
 
 	    finalColor += (kD * albedo / PI + specular) * radiance * NdotL;
-	}
-	finalColor += ao * albedo * vec3(0.03);
+	}*/
+ 	vec3 kS = fresnelSchlick(max(dot(normal, viewDirection), 0.0), baseReflectivity);
+    vec3 kD = 1.0 - kS;
+	vec3 irradiance =  texture(t_irradiance, SampleSphericalMap(normalize(normal))).xyz;
+ 	vec3 diffuse      = irradiance * albedo;
+    vec3 ambient = (kD * diffuse) * ao;
+    finalColor+=ambient;
 	finalColor = finalColor/(finalColor+vec3(1.0));
 	finalColor = pow(finalColor, vec3(1.0/2.2)); 
 	return finalColor;

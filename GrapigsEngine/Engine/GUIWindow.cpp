@@ -149,6 +149,7 @@ namespace GUIWindow
 		m_textureModal("Import Texture Modal", this),
         m_assetWin("Imported Asset", this),
         m_gizmoToolWin("Tool", this),
+		m_testWin("TEST", this),
 		m_p_resource(p_resource)
     {
     }
@@ -161,6 +162,7 @@ namespace GUIWindow
         m_meshWin.SetObject(p_object);
         m_textureModal.SetObject(p_object);
         m_assetWin.SetObject(p_object);
+        m_testWin.SetObject(p_object);
     }
 
     void WindowInst::Update() noexcept
@@ -171,6 +173,7 @@ namespace GUIWindow
         m_meshWin.Update();
         m_textureModal.Update();
         m_assetWin.Update();
+        m_testWin.Update();
         m_sceneWin.Update();
     }
 
@@ -825,4 +828,22 @@ namespace GUIWindow
     }
 
     /* Texture Preview Window - end -----------------------------------------------------------------*/
+    /*-----------------------------------------------------------------------------------------------*/
+    /* Test Window - start --------------------------------------------------------------------------*/
+
+    TestWindow::TestWindow(const char* name, WindowInst* p_inst) noexcept
+        : Window(name, p_inst)
+    {
+    }
+
+    void TestWindow::Content() noexcept
+    {
+        const auto size = 512;
+        intptr_t tex = 0;//m_p_windows->m_p_resource->m_irradianceMap.GetTexture();
+        const auto texture = static_cast<intptr_t>(tex);
+        ImGui::Image(reinterpret_cast<void*>(texture), ImVec2(size, size), ImVec2(0, 1), ImVec2(1, 0));
+    }
+
+    /* Test Window - end ----------------------------------------------------------------------------*/
+
 }

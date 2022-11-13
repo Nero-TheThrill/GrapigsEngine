@@ -69,13 +69,14 @@ private:
 
 enum class TextureType
 {
-	Default = 0, IBL, BRDF
+	Default = 0, IBL, BRDF, Irradiance, Environment
 };
 
 class Texture
 {
 public:
-	Texture(const char* file_path, bool is_2d_texture = true) noexcept;
+	static unsigned s_textureCount;
+	Texture(const char* file_path, bool is_2d_texture = true, bool is_hdr = false) noexcept;
 	~Texture() noexcept;
 
 	[[nodiscard]] unsigned Unit() const noexcept;
@@ -86,7 +87,6 @@ public:
 	const std::string m_name;
 	const std::filesystem::path m_path;
 protected:
-	static unsigned s_textureCount;
 	unsigned m_handle = 0;
 	unsigned m_unit = 0;
 };
@@ -95,6 +95,7 @@ class CubeMapTexture final : public Texture
 {
 public:
 	CubeMapTexture(std::vector<std::filesystem::path> file_path) noexcept;
+	CubeMapTexture() noexcept;
 private:
 	const std::vector<std::filesystem::path> m_paths;
 };
@@ -111,7 +112,8 @@ public:
 	void UnBind() const noexcept;
 
 	[[nodiscard]] unsigned GetTexture() const noexcept;
+	[[nodiscard]] unsigned Unit() const noexcept;
 private:
-	const unsigned unit = 0;
+	const unsigned m_unit;
 	unsigned m_fboHandle, m_rboHandle, m_texture;
 };
