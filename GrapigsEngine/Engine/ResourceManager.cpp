@@ -197,7 +197,7 @@ ResourceManager::ResourceManager() :
         glm::vec3(0,0,-1),
         glm::vec3(0,0,1),
     };
-    int maxMipLevels = 5;
+    int maxMipLevels = 7;
 
     m_cube->m_p_shader->SendUniform("t_ibl", m_texUnit.find(TextureType::IBL)->second);
     m_cube->m_p_shader->SendUniform("t_irradiance", m_texUnit.find(TextureType::Irradiance)->second);

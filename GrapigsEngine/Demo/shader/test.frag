@@ -104,7 +104,7 @@ vec3 CalculateFinalColor()
 {
 	vec3 albedo = u_albedo;
 	if(u_has_albedo)
-		albedo = texture2D(t_albedo, texcoord).xyz;
+		albedo =pow(texture2D(t_albedo, texcoord).xyz, vec3(2.2));
 	float metallic = u_metallic;
 	if(u_has_metallic)
 		metallic = texture2D(t_metallic, texcoord).x;
@@ -179,7 +179,7 @@ vec3 CalculateFinalColor()
  	vec3 diffuse      = irradiance * albedo;
 
  	vec3 R = reflect(-viewDirection, normal);
-	const float MAX_REFLECTION_LOD = 4.0;
+	const float MAX_REFLECTION_LOD = 6.0;
     vec3 prefilteredColor = textureLod(t_prefiltermap, R,  roughness * MAX_REFLECTION_LOD).rgb; 
     vec3 specular = prefilteredColor;
 
