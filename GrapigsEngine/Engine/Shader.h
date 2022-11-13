@@ -69,7 +69,7 @@ private:
 
 enum class TextureType
 {
-	Default = 0, IBL, BRDF, Irradiance, Environment
+	Default = 0, IBL, BRDF, Irradiance, Environment,PrefilterMap
 };
 
 class Texture
@@ -111,9 +111,16 @@ public:
 	void Bind() const noexcept;
 	void UnBind() const noexcept;
 
+	void CreatePrefilterMap();
+	void BindFBO_PrefilterMap();
+	void BindRBO_PrefilterMap(unsigned width, unsigned height);
+	void BindTexture_PrefilterMap(int mip, unsigned i);
+
+
 	[[nodiscard]] unsigned GetTexture() const noexcept;
 	[[nodiscard]] unsigned Unit() const noexcept;
+	[[nodiscard]] unsigned Unit_PrefilterMap() const noexcept;
 private:
-	const unsigned m_unit;
-	unsigned m_fboHandle, m_rboHandle, m_texture;
+	const unsigned m_unit, m_prefilterunit;
+	unsigned m_fboHandle, m_rboHandle, m_texture, m_prefiltermap;
 };

@@ -9,6 +9,8 @@ layout (location=0) out vec4 output_color;
 uniform sampler2D t_irradiance;
 uniform sampler2D t_brdflut;
 uniform sampler2D t_ibl;
+uniform samplerCube t_prefiltermap;
+
 
 uniform vec3 u_albedo;
 uniform float u_metallic;
@@ -172,6 +174,8 @@ vec3 CalculateFinalColor()
     finalColor+=ambient;
 	finalColor = finalColor/(finalColor+vec3(1.0));
 	finalColor = pow(finalColor, vec3(1.0/2.2)); 
+
+
 	return finalColor;
 }
 

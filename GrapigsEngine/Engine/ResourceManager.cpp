@@ -129,9 +129,12 @@ void Object::Draw(Primitive primitive, const std::map<TextureType, unsigned>& te
     m_p_shader->SendUniform("t_irradiance", textures.find(TextureType::Irradiance)->second);
     m_p_shader->SendUniform("t_brdflut", textures.find(TextureType::BRDF)->second);
     m_p_shader->SendUniform("t_environment", textures.find(TextureType::Environment)->second);
+    m_p_shader->SendUniform("t_prefiltermap", textures.find(TextureType::PrefilterMap)->second);
     m_p_shader->SendUniform("u_color", m_color);
     m_p_shader->SendUniform("u_modelToWorld", m_transform.GetTransformMatrix());
+
     m_p_model->Draw(primitive, m_p_shader);
+
     m_p_shader->UnUse();
 }
 
@@ -146,13 +149,16 @@ ResourceManager::ResourceManager() :
     m_grid(new Grid(3, 10)),
     m_object(nullptr),
     m_skybox(nullptr),
+    m_cube(nullptr),
     m_brdf("texture/brdf.png"),
-    m_hdr("texture/skybox/BasketballCourt_3k.hdr",false,true),
+    m_hdr("texture/skybox/BasketballCourt_3k.hdr", false, true),
     m_environment("texture/skybox/BasketballCourt_8k.jpg"),
     m_irradiance("texture/skybox/BasketballCourt_Env.hdr", false, true)
 {
     const glm::ivec2& size = Input::s_m_windowSize;
     m_fbo->Init(size.x, size.y);
+
+
 
     m_texUnit[TextureType::IBL] = m_hdr.Unit();
     m_texUnit[TextureType::Irradiance] = m_irradiance.Unit();
@@ -161,6 +167,73 @@ ResourceManager::ResourceManager() :
 
     glDepthFunc(GL_LEQUAL);
     CreateSkyBox();
+
+    m_cube = new Object();
+    m_cube->m_p_model = m_models[LoadFbx("model/skycube.fbx")];
+
+
+
+
+
+
+    const std::vector<std::pair<ShaderType, std::filesystem::path>> shader_files = {
+        std::make_pair(ShaderType::Vertex, "shader/prefilter.vert"),
+        std::make_pair(ShaderType::Fragment, "shader/prefilter.frag")
+    };
+    m_cube->m_p_shader = m_shaders[LoadShaders(shader_files)];
+
+   
+
+
+    m_cube->m_p_shader->Use();
+    m_fbo->BindFBO_PrefilterMap();
+
+    m_fbo->CreatePrefilterMap();
+    m_texUnit[TextureType::PrefilterMap] = m_fbo->Unit_PrefilterMap();
+    constexpr glm::vec3 views[] =
+    {
+        glm::vec3(-1,0,0),
+        glm::vec3(1,0,0),
+        glm::vec3(0,-1,-0.000001),
+        glm::vec3(0,1,0.000001),
+        glm::vec3(0,0,-1),
+        glm::vec3(0,0,1),
+    };
+    int maxMipLevels = 5;
+
+    m_cube->m_p_shader->SendUniform("t_ibl", m_texUnit.find(TextureType::IBL)->second);
+    m_cube->m_p_shader->SendUniform("t_irradiance", m_texUnit.find(TextureType::Irradiance)->second);
+    m_cube->m_p_shader->SendUniform("t_brdflut", m_texUnit.find(TextureType::BRDF)->second);
+    m_cube->m_p_shader->SendUniform("t_environment", m_texUnit.find(TextureType::Environment)->second);
+    m_cube->m_p_shader->SendUniform("u_modelToWorld", m_cube->m_transform.GetTransformMatrix());
+
+    for (int mip = 0; mip < maxMipLevels; mip++)
+    {
+
+        unsigned int mipWidth = static_cast<unsigned int>(128 * std::pow(0.5, mip));
+        unsigned int mipHeight = static_cast<unsigned int>(128 * std::pow(0.5, mip));
+        m_fbo->BindRBO_PrefilterMap(mipWidth, mipHeight);
+
+
+        float roughness = static_cast<float>(mip) / static_cast<float>(maxMipLevels - 1);
+        m_cube->m_p_shader->SendUniform("roughness", roughness);
+
+        for (unsigned int i = 0; i < 6; i++)
+        {
+            CameraBuffer::s_m_aspectRatio = static_cast<float>(mipWidth) / static_cast<float>(mipHeight);
+            CameraBuffer::s_m_camera->Set(views[i]);
+            CameraBuffer::Bind();
+            m_fbo->BindTexture_PrefilterMap(mip, i);
+
+
+            m_cube->m_p_model->Draw(Primitive::Triangles, m_cube->m_p_shader);
+        }
+
+    }
+
+    m_fbo->UnBind();
+    m_cube->m_p_shader->UnUse();
+
 
 }
 
