@@ -111,16 +111,16 @@ vec3 CalculateFinalColor()
 	float roughness = u_roughness;
 	if(u_has_roughness)
 		roughness = texture2D(t_roughness, texcoord).x;
-	float ao = u_roughness;
+	float ao = 1.0f;
 	if(u_has_ao)
 		ao = texture2D(t_ao, texcoord).x;
 
 	vec3 finalColor = vec3(0);
 	vec3 viewDirection = normalize(u_trans.camPosition - position);
-	vec3 baseReflectivity = mix(vec3(0.04), albedo, metallic);
 	vec3 F0 = vec3(0.04);
 	F0 = mix(F0, albedo, metallic);
-	/*for(uint i=0; i < lightInfo.lightNum; i++) 
+	/*
+	for(uint i=0; i < lightInfo.lightNum; i++) 
 	{	
 		Light light = lightInfo.lights[i];
 		vec3 lightVector = normalize(light.position - position);
@@ -136,9 +136,10 @@ vec3 CalculateFinalColor()
 
 		float D = distributionGGX(NdotH, roughness);
 		float G = geometrySmith(NdotV, NdotL, roughness);
-		vec3 F = fresnelSchlick(HdotV, baseReflectivity);
+		vec3 F = fresnelSchlick(HdotV, F0);
 		vec3 specular = D * G * F;
-		specular /= 4.0 * NdotV * NdotL;
+		specular /= 4.0 * max(NdotV, 0.0) * max(NdotL, 0.0) + 0.0001; 
+
 		vec3 kD = vec3(1.0) - F;
 		kD *= 1.0 - metallic;
 
@@ -181,8 +182,8 @@ vec3 CalculateFinalColor()
  	vec3 R = reflect(-viewDirection, normal);
 	const float MAX_REFLECTION_LOD = 6.0;
     vec3 prefilteredColor = textureLod(t_prefiltermap, R,  roughness * MAX_REFLECTION_LOD).rgb; 
-    vec3 specular = prefilteredColor;
-
+    vec2 brdf  = texture(t_brdflut, vec2(max(dot(normal, viewDirection), 0.0), roughness)).rg;
+    vec3 specular = prefilteredColor * (kS * brdf.x + brdf.y);
 
     vec3 ambient = (kD * diffuse + specular) * ao;
     finalColor+=ambient;
