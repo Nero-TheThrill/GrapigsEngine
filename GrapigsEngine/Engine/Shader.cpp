@@ -457,7 +457,7 @@ FrameBufferObject::~FrameBufferObject()
 void FrameBufferObject::Init(int width, int height) noexcept
 {
 	if (!m_fboHandle)
-		glCreateFramebuffers(1, &m_fboHandle);
+		glGenFramebuffers(1, &m_fboHandle);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_fboHandle);
 
 
@@ -482,7 +482,7 @@ void FrameBufferObject::Init(int width, int height) noexcept
 		std::cout << "[Frame Buffer Object]: Frame Buffer isn't complete" << std::endl;
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
 }
 
 void FrameBufferObject::Clear() noexcept
@@ -535,7 +535,7 @@ void FrameBufferObject::BindRBO_PrefilterMap(unsigned width, unsigned height)
 {
 	glBindRenderbuffer(GL_RENDERBUFFER, m_rboHandle);
 
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 128, 128);
 	glViewport(0, 0, width, height);
 }
 
