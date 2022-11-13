@@ -87,10 +87,15 @@ float geometrySmith(float NdotV, float NdotL, float roughness)
 	float ggx2 = NdotL / (NdotL * (1.0 - k) + k);
 	return ggx1 * ggx2;
 }
-vec3 fresnelSchlick(float HdotV, vec3 baseReflectivity)
+vec3 fresnelSchlick(float HdotV, vec3 F0)
 {
-	return baseReflectivity + (1.0 - baseReflectivity) * pow(1.0 - HdotV, 5.0);
+	return F0 + (1.0 - F0) * pow(clamp(1.0 - HdotV, 0.0, 1.0), 5.0);
 }
+
+vec3 fresnelSchlickRoughness(float NdotV, vec3 F0, float roughness)
+{
+    return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - NdotV, 0.0, 1.0), 5.0);
+} 
 //----------------------------------Lighting----------------------------------------//
 
 
@@ -113,7 +118,8 @@ vec3 CalculateFinalColor()
 	vec3 finalColor = vec3(0);
 	vec3 viewDirection = normalize(u_trans.camPosition - position);
 	vec3 baseReflectivity = mix(vec3(0.04), albedo, metallic);
-	
+	vec3 F0 = vec3(0.04);
+	F0 = mix(F0, albedo, metallic);
 	/*for(uint i=0; i < lightInfo.lightNum; i++) 
 	{	
 		Light light = lightInfo.lights[i];
@@ -166,18 +172,25 @@ vec3 CalculateFinalColor()
 
 	    finalColor += (kD * albedo / PI + specular) * radiance * NdotL;
 	}*/
- 	vec3 kS = fresnelSchlick(max(dot(normal, viewDirection), 0.0), baseReflectivity);
+ 	vec3 kS = fresnelSchlickRoughness(max(dot(normal, viewDirection), 0.0), F0, roughness);
     vec3 kD = 1.0 - kS;
+    kD*=1.0-metallic;
 	vec3 irradiance =  texture(t_irradiance, SampleSphericalMap(normalize(normal))).xyz;
  	vec3 diffuse      = irradiance * albedo;
-    vec3 ambient = (kD * diffuse) * ao;
+
+ 	vec3 R = reflect(-viewDirection, normal);
+	const float MAX_REFLECTION_LOD = 4.0;
+    vec3 prefilteredColor = textureLod(t_prefiltermap, R,  roughness * MAX_REFLECTION_LOD).rgb; 
+    vec3 specular = prefilteredColor;
+
+
+    vec3 ambient = (kD * diffuse + specular) * ao;
     finalColor+=ambient;
 	finalColor = finalColor/(finalColor+vec3(1.0));
 	finalColor = pow(finalColor, vec3(1.0/2.2)); 
 
-	vec3 R = reflect(-viewDirection, normal);
-	const float MAX_REFLECTION_LOD = 4.0;
-    finalColor = textureLod(t_prefiltermap, R,  roughness * MAX_REFLECTION_LOD).rgb; 
+
+
 	return finalColor;
 }
 

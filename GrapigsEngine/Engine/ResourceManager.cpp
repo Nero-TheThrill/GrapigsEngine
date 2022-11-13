@@ -208,8 +208,8 @@ ResourceManager::ResourceManager() :
     for (int mip = 0; mip < maxMipLevels; mip++)
     {
 
-        unsigned int mipWidth = static_cast<unsigned int>(128 * std::pow(0.5, mip));
-        unsigned int mipHeight = static_cast<unsigned int>(128 * std::pow(0.5, mip));
+        unsigned int mipWidth = static_cast<unsigned int>(512 * std::pow(0.5, mip));
+        unsigned int mipHeight = static_cast<unsigned int>(512 * std::pow(0.5, mip));
         m_fbo_prefiltermap->BindRBO_PrefilterMap(mipWidth, mipHeight);
 
 

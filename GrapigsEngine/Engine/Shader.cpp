@@ -534,7 +534,7 @@ void FrameBufferObject_PreFilterMap::Init(int width, int height) noexcept
 	glBindTexture(GL_TEXTURE_CUBE_MAP, m_texture);
 	for (unsigned int i = 0; i < 6; ++i)
 	{
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, 128, 128, 0, GL_RGB, GL_FLOAT, nullptr);
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, 512, 512, 0, GL_RGB, GL_FLOAT, nullptr);
 	}
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -569,6 +569,7 @@ void FrameBufferObject_PreFilterMap::Bind() const noexcept
 
 void FrameBufferObject_PreFilterMap::UnBind() const noexcept
 {
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 
@@ -580,7 +581,7 @@ void FrameBufferObject_PreFilterMap::BindRBO_PrefilterMap(unsigned width, unsign
 {
 	glBindRenderbuffer(GL_RENDERBUFFER, m_rboHandle);
 
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 128, 128);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
 	glViewport(0, 0, width, height);
 }
 
