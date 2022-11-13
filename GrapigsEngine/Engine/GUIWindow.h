@@ -80,7 +80,8 @@ namespace GUIWindow
 		void Content() noexcept override;
 	private:
 		void UpdateGizmo() noexcept;
-		glm::mat4 m_model{1.f};
+		glm::mat4 m_model{ 1.f }, m_view{ 1.f }, m_proj{ 1.f };
+		glm::mat4 m_delta{ 1.f };
 	};
 
 	class Mesh final : public Window

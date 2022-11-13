@@ -12,7 +12,7 @@
 
 enum class MouseButton
 {
-	Left = 0, Right = 1
+	Left = 0, Right = 1, Middle = 2
 };
 
 enum class Modifier
@@ -44,13 +44,15 @@ public:
 	static Modifier GetModifier() noexcept;
 	static bool IsKeyPressed(Keyboard key) noexcept;
 	static bool IsKeyReleased(Keyboard key) noexcept;
+	static int GetMouseScroll() noexcept;
 
 	static bool DropAndDropDetected() noexcept;
 	static std::vector<std::filesystem::path> GetDroppedPaths() noexcept;
 
 	static glm::ivec2 s_m_windowSize;
 private:
-	static bool s_m_isMouseDown[2];
+	static bool s_m_isMouseDown[3];
+	static int s_m_scroll;
 	static Modifier s_m_modifier;
 	static glm::ivec2 s_m_cursorDir;
 	static glm::ivec2 s_m_cursor;

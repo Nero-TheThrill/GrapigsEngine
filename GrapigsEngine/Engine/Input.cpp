@@ -10,7 +10,8 @@
 #include <GLFW/glfw3.h>	// glfw functions
 
 glm::ivec2 Input::s_m_windowSize = glm::ivec2(1200, 900);
-bool Input::s_m_isMouseDown[2] = { false, false };
+bool Input::s_m_isMouseDown[3] = { false, false, false };
+int Input::s_m_scroll = 0;
 Modifier Input::s_m_modifier = Modifier::None;
 glm::ivec2 Input::s_m_cursor = glm::ivec2(0, 0);
 glm::ivec2 Input::s_m_cursorDir = glm::ivec2(0);
@@ -89,7 +90,7 @@ void Input::KeyboardCallback(void* p_window, int key, int, int action, int mod) 
 void Input::CursorPosCallback(void*, double x_pos, double y_pos) noexcept
 {
 	const glm::ivec2 pos = glm::ivec2(x_pos, s_m_windowSize.y - y_pos);
-	if (s_m_isMouseDown[0] || s_m_isMouseDown[1])
+	if (s_m_isMouseDown[0] || s_m_isMouseDown[1] || s_m_isMouseDown[2])
 		s_m_cursorDir = pos - s_m_cursor;
 	s_m_cursor = pos;
 	s_m_ray.x = 2.f * (static_cast<float>(pos.x) / static_cast<float>(s_m_windowSize.x)) - 1.f;
@@ -105,6 +106,8 @@ void Input::MouseButtonCallback(void*, int button, int action, int mod) noexcept
 			s_m_isMouseDown[0] = false;
 		else if (button == GLFW_MOUSE_BUTTON_RIGHT)
 			s_m_isMouseDown[1] = false;
+		else if (button == GLFW_MOUSE_BUTTON_MIDDLE)
+			s_m_isMouseDown[2] = false;
 		s_m_modifier = Modifier::None;
 		s_m_cursorDir = glm::ivec2(0);
 	}
@@ -121,11 +124,14 @@ void Input::MouseButtonCallback(void*, int button, int action, int mod) noexcept
 			s_m_isMouseDown[0] = true;
 		else if (button == GLFW_MOUSE_BUTTON_RIGHT)
 			s_m_isMouseDown[1] = true;
+		else if (button == GLFW_MOUSE_BUTTON_MIDDLE)
+			s_m_isMouseDown[2] = true;
 	}
 }
 
-void Input::ScrollCallback(void*, double, double) noexcept
+void Input::ScrollCallback(void*, double , double y_offset) noexcept
 {
+	s_m_scroll = static_cast<int>(y_offset);
 }
 
 void Input::DragAndDropCallback(void*, int count, const char** paths) noexcept
@@ -166,6 +172,13 @@ bool Input::IsKeyReleased(Keyboard key) noexcept
 		return true;
 	}
 	return false;
+}
+
+int Input::GetMouseScroll() noexcept
+{
+	const int scroll = s_m_scroll;
+	s_m_scroll = 0;
+	return scroll;
 }
 
 bool Input::DropAndDropDetected() noexcept

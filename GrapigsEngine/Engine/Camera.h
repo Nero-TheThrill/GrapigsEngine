@@ -18,21 +18,28 @@ public:
 	void Set(const glm::mat4& view) noexcept;
 	void Reset() noexcept;
 
+	[[nodiscard]] bool IsUpdated() noexcept;
+
 	[[nodiscard]] const glm::mat4& GetWorldToCameraMatrix() const noexcept;
 	[[nodiscard]] const glm::mat4& GetCameraToNDCMatrix() const noexcept;
 
 	[[nodiscard]] const glm::vec3& Eye() const noexcept;
 	[[nodiscard]] const glm::vec3& Back() const noexcept;
+	[[nodiscard]] float FOV() const noexcept;
+	[[nodiscard]] std::pair<float, float> Plane() const noexcept;
 
 	void Forward(float z_axis_distance) noexcept;
-	void Upward(float y_axis_distance) noexcept;
-	void Sideward(float x_axis_distance) noexcept;
+	void OrbitMouse(float x, float y, float speed) noexcept;
+	void TranslateMouse(float x, float y, float speed) noexcept;
+
 	void Pitch(float pitch_angle) noexcept;
-	void Yaw(float yaw_angle) noexcept;
 	void Roll(float roll_angle) noexcept;
+	void Yaw(float yaw_angle) noexcept;
+	void RotateMouse(float x, float y, float speed) noexcept;
 private:
 	void UpdateMatrix() noexcept;
 
+	bool m_isUpdated;
 	float m_near, m_far, m_fov;
 	glm::vec3 m_eye, m_right, m_up, m_back;
 	glm::mat4 m_worldToCamera, m_cameraToNDC, m_worldToNDC;

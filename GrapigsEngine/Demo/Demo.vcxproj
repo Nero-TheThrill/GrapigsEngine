@@ -71,6 +71,7 @@
     <PostBuildEvent>
       <Command>xcopy $(ProjectDir)model $(TargetDir)model /I /R /C /Y
 xcopy $(ProjectDir)shader $(TargetDir)shader /I /R /C /Y
+xcopy $(ProjectDir)texture $(TargetDir)texture /I /R /C /Y
 xcopy /y /d "$(SolutionDir)third_party\bin\$(Configuration)\*.dll" "$(TargetDir)"
 </Command>
     </PostBuildEvent>
@@ -96,6 +97,7 @@ xcopy /y /d "$(SolutionDir)third_party\bin\$(Configuration)\*.dll" "$(TargetDir)
     <PostBuildEvent>
       <Command>xcopy $(ProjectDir)model $(TargetDir)model /I /R /C /Y
 xcopy $(ProjectDir)shader $(TargetDir)shader /I /R /C /Y
+xcopy $(ProjectDir)texture $(TargetDir)texture /I /R /C /Y
 xcopy /y /d "$(SolutionDir)third_party\bin\$(Configuration)\*.dll" "$(TargetDir)"
 </Command>
     </PostBuildEvent>
