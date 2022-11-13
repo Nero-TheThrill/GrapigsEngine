@@ -444,8 +444,8 @@ CubeMapTexture::CubeMapTexture() noexcept : Texture("cube-map", false)
 	const_cast<bool&>(m_initialized) = true;
 }
 
-FrameBufferObject::FrameBufferObject() 
-	: m_unit(Texture::s_textureCount++), m_fboHandle(0), m_rboHandle(0), m_texture(0)
+FrameBufferObject::FrameBufferObject()
+	: m_unit(Texture::s_textureCount++), m_fboHandle(0), m_rboHandle(0), m_texture(0) 
 {
 }
 
@@ -457,7 +457,7 @@ FrameBufferObject::~FrameBufferObject()
 void FrameBufferObject::Init(int width, int height) noexcept
 {
 	if (!m_fboHandle)
-		glCreateFramebuffers(1, &m_fboHandle);
+		glGenFramebuffers(1, &m_fboHandle);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_fboHandle);
 
 
@@ -475,14 +475,14 @@ void FrameBufferObject::Init(int width, int height) noexcept
 		glGenRenderbuffers(1, &m_rboHandle);
 	glBindRenderbuffer(GL_RENDERBUFFER, m_rboHandle);
 
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_rboHandle);
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
 		std::cout << "[Frame Buffer Object]: Frame Buffer isn't complete" << std::endl;
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
 }
 
 void FrameBufferObject::Clear() noexcept
@@ -515,5 +515,82 @@ unsigned FrameBufferObject::Unit() const noexcept
 {
 	return m_unit;
 }
+
+FrameBufferObject_PreFilterMap::FrameBufferObject_PreFilterMap()
+{
+}
+
+FrameBufferObject_PreFilterMap::~FrameBufferObject_PreFilterMap()
+{
+}
+
+void FrameBufferObject_PreFilterMap::Init(int width, int height) noexcept
+{
+	if (!m_fboHandle)
+		glGenFramebuffers(1, &m_fboHandle);
+	glBindFramebuffer(GL_FRAMEBUFFER, m_fboHandle);
+
+	glGenTextures(1, &m_texture);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, m_texture);
+	for (unsigned int i = 0; i < 6; ++i)
+	{
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, 512, 512, 0, GL_RGB, GL_FLOAT, nullptr);
+	}
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+
+	glBindTextureUnit(m_unit, m_texture);
+
+	if (!m_rboHandle)
+		glGenRenderbuffers(1, &m_rboHandle);
+	glBindRenderbuffer(GL_RENDERBUFFER, m_rboHandle);
+
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_rboHandle);
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	{
+		std::cout << "[Frame Buffer Object]: Frame Buffer isn't complete" << std::endl;
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void FrameBufferObject_PreFilterMap::Clear() noexcept
+{
+}
+
+void FrameBufferObject_PreFilterMap::Bind() const noexcept
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, m_fboHandle);
+}
+
+void FrameBufferObject_PreFilterMap::UnBind() const noexcept
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+
+void FrameBufferObject_PreFilterMap::BindFBO_PrefilterMap()
+{
+}
+
+void FrameBufferObject_PreFilterMap::BindRBO_PrefilterMap(unsigned width, unsigned height)
+{
+	glBindRenderbuffer(GL_RENDERBUFFER, m_rboHandle);
+
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
+	glViewport(0, 0, width, height);
+}
+
+void FrameBufferObject_PreFilterMap::BindTexture_PrefilterMap(int mip, unsigned i)
+{
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, m_texture, mip);
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
 
 /* Texture - end --------------------------------------------------------------------------------*/

@@ -98,9 +98,10 @@ public:
     void DrawTriangles() const noexcept;
 
     static FrameBufferObject* m_fbo;
+    static FrameBufferObject_PreFilterMap* m_fbo_prefiltermap;
 private:
     Grid* m_grid;
-    Object* m_object, *m_skybox;
+    Object* m_object, *m_skybox, *m_cube;
     std::map<unsigned, Texture*> m_textures;
     std::map<unsigned, Model*> m_models;
     std::map<unsigned, ShaderProgram*> m_shaders;
