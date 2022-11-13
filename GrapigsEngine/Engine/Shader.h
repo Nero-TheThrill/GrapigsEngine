@@ -111,16 +111,26 @@ public:
 	void Bind() const noexcept;
 	void UnBind() const noexcept;
 
-	void CreatePrefilterMap();
+	[[nodiscard]] unsigned GetTexture() const noexcept;
+	[[nodiscard]] unsigned Unit() const noexcept;
+protected:
+	const unsigned m_unit;
+	unsigned m_fboHandle, m_rboHandle, m_texture;
+};
+
+
+class FrameBufferObject_PreFilterMap : public FrameBufferObject
+{
+public:
+	FrameBufferObject_PreFilterMap();
+	~FrameBufferObject_PreFilterMap();
+
+	void Init(int width, int height) noexcept;
+	void Clear() noexcept;
+	void Bind() const noexcept;
+	void UnBind() const noexcept;
+
 	void BindFBO_PrefilterMap();
 	void BindRBO_PrefilterMap(unsigned width, unsigned height);
 	void BindTexture_PrefilterMap(int mip, unsigned i);
-
-
-	[[nodiscard]] unsigned GetTexture() const noexcept;
-	[[nodiscard]] unsigned Unit() const noexcept;
-	[[nodiscard]] unsigned Unit_PrefilterMap() const noexcept;
-private:
-	const unsigned m_unit, m_prefilterunit;
-	unsigned m_fboHandle, m_rboHandle, m_texture, m_prefiltermap;
 };

@@ -144,7 +144,7 @@ void Object::Draw(Primitive primitive, const std::map<TextureType, unsigned>& te
 /* ResourceManager - start ----------------------------------------------------------------------*/
 
 FrameBufferObject* ResourceManager::m_fbo = new FrameBufferObject();
-
+FrameBufferObject_PreFilterMap* ResourceManager::m_fbo_prefiltermap = new FrameBufferObject_PreFilterMap();
 ResourceManager::ResourceManager() :
     m_grid(new Grid(3, 10)),
     m_object(nullptr),
@@ -157,7 +157,7 @@ ResourceManager::ResourceManager() :
 {
     const glm::ivec2& size = Input::s_m_windowSize;
     m_fbo->Init(size.x, size.y);
-
+    m_fbo_prefiltermap->Init(size.x, size.y);
 
 
     m_texUnit[TextureType::IBL] = m_hdr.Unit();
@@ -186,16 +186,14 @@ ResourceManager::ResourceManager() :
 
 
     m_cube->m_p_shader->Use();
-    m_fbo->BindFBO_PrefilterMap();
-
-    m_fbo->CreatePrefilterMap();
-    m_texUnit[TextureType::PrefilterMap] = m_fbo->Unit_PrefilterMap();
+    m_fbo_prefiltermap->Bind();
+    m_texUnit[TextureType::PrefilterMap] = m_fbo_prefiltermap->Unit();
     constexpr glm::vec3 views[] =
     {
         glm::vec3(-1,0,0),
         glm::vec3(1,0,0),
         glm::vec3(0,-1,-0.000001),
-        glm::vec3(0,1,0.000001),
+        glm::vec3(0,1,-0.000001),
         glm::vec3(0,0,-1),
         glm::vec3(0,0,1),
     };
@@ -212,7 +210,7 @@ ResourceManager::ResourceManager() :
 
         unsigned int mipWidth = static_cast<unsigned int>(128 * std::pow(0.5, mip));
         unsigned int mipHeight = static_cast<unsigned int>(128 * std::pow(0.5, mip));
-        m_fbo->BindRBO_PrefilterMap(mipWidth, mipHeight);
+        m_fbo_prefiltermap->BindRBO_PrefilterMap(mipWidth, mipHeight);
 
 
         float roughness = static_cast<float>(mip) / static_cast<float>(maxMipLevels - 1);
@@ -223,7 +221,7 @@ ResourceManager::ResourceManager() :
             CameraBuffer::s_m_aspectRatio = static_cast<float>(mipWidth) / static_cast<float>(mipHeight);
             CameraBuffer::s_m_camera->Set(views[i]);
             CameraBuffer::Bind();
-            m_fbo->BindTexture_PrefilterMap(mip, i);
+            m_fbo_prefiltermap->BindTexture_PrefilterMap(mip, i);
 
 
             m_cube->m_p_model->Draw(Primitive::Triangles, m_cube->m_p_shader);
@@ -231,8 +229,12 @@ ResourceManager::ResourceManager() :
 
     }
 
-    m_fbo->UnBind();
+    m_fbo_prefiltermap->UnBind();
     m_cube->m_p_shader->UnUse();
+    CameraBuffer::s_m_aspectRatio = (float)size.x / size.y;
+    CameraBuffer::s_m_camera->Set(views[0]);
+    CameraBuffer::Bind();
+    glViewport(0,0,size.x, size.y);
 
 
 }

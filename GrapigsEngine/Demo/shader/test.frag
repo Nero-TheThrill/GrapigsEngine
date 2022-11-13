@@ -175,7 +175,9 @@ vec3 CalculateFinalColor()
 	finalColor = finalColor/(finalColor+vec3(1.0));
 	finalColor = pow(finalColor, vec3(1.0/2.2)); 
 
-
+	vec3 R = reflect(-viewDirection, normal);
+	const float MAX_REFLECTION_LOD = 4.0;
+    finalColor = textureLod(t_prefiltermap, R,  roughness * MAX_REFLECTION_LOD).rgb; 
 	return finalColor;
 }
 

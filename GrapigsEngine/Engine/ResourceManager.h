@@ -98,6 +98,7 @@ public:
     void DrawTriangles() const noexcept;
 
     static FrameBufferObject* m_fbo;
+    static FrameBufferObject_PreFilterMap* m_fbo_prefiltermap;
 private:
     Grid* m_grid;
     Object* m_object, *m_skybox, *m_cube;
