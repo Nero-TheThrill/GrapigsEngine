@@ -411,7 +411,7 @@ namespace GUIWindow
     void Mesh::RecursiveMesh(Object* p_object, ::Mesh* p_mesh) noexcept
     {
         static int selection_mask = (1 << 2);
-        static ImGuiTreeNodeFlags base = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_SpanFullWidth;
+        static ImGuiTreeNodeFlags base = /*ImGuiTreeNodeFlags_OpenOnArrow |ImGuiTreeNodeFlags_OpenOnDoubleClick |*/ ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_SpanFullWidth;
         static ImGuiTreeNodeFlags leaf = base | ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 
         int clicked_index = -1;
@@ -512,24 +512,32 @@ namespace GUIWindow
                 ImGui::OpenPopup("Open Texture Menu");
                 m_p_clicked = texture;
             }
+        }
+        else
+        {
+            ImGui::PushID(desc);
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0, 0, 0, 0 });
+            ImGui::Button("\t", { 100, 100 });
+            ImGui::PopStyleColor();
+            ImGui::PopID();
+        }
 
-            // Drag and drop detect
-        	if (ImGui::BeginDragDropTarget())
+        // Drag and drop detect
+        if (ImGui::BeginDragDropTarget())
+        {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("_TextureSource"))
             {
-                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("_TextureSource"))
-                {
-                    IM_ASSERT(payload->DataSize == sizeof(unsigned));
-                    auto* p_texture = m_p_windows->m_p_resource->GetTexture(*(unsigned*)(payload->Data));
+                IM_ASSERT(payload->DataSize == sizeof(unsigned));
+                auto* p_texture = m_p_windows->m_p_resource->GetTexture(*(unsigned*)(payload->Data));
 
-                	::Material* m = &m_p_mesh->material;
-                    if (m->t_albedo == texture) m->t_albedo = p_texture;
-                    else if (m->t_normal == texture) m->t_normal = p_texture;
-                    else if (m->t_metallic == texture) m->t_metallic = p_texture;
-                    else if (m->t_roughness == texture) m->t_roughness = p_texture;
-                    else if (m->t_ao == texture) m->t_ao = p_texture;
-                }
-                ImGui::EndDragDropTarget();
+                ::Material* m = &m_p_mesh->material;
+                if (strcmp(desc, "Color") == 0) m->t_albedo = p_texture;
+                else if (strcmp(desc, "Normal") == 0) m->t_normal = p_texture;
+                else if (strcmp(desc, "Metalness") == 0) m->t_metallic = p_texture;
+                else if (strcmp(desc, "Roughness") == 0) m->t_roughness = p_texture;
+                else if (strcmp(desc, "AO") == 0) m->t_ao = p_texture;
             }
+            ImGui::EndDragDropTarget();
         }
 
         if(ImGui::BeginPopup("Open Texture Menu"))
@@ -587,6 +595,8 @@ namespace GUIWindow
             ImGui::EndChild();
 
             // Apply texture
+
+            HelpMarker("Select texture type and press one of buttons below.\nThen this texture will be applied to mesh(es) with selected type.\nNOTE: THIS IS NOT TYPE OF THIS TEXTURE!");
             if(ImGui::Button("Apply to all meshes"))
             {
                 auto* texture = m_p_windows->m_p_resource->GetTexture(m_textureDD.GetSelectedID());
@@ -838,10 +848,9 @@ namespace GUIWindow
 
     void TestWindow::Content() noexcept
     {
-        const auto size = 512;
-        intptr_t tex = 0;//m_p_windows->m_p_resource->m_irradianceMap.GetTexture();
-        const auto texture = static_cast<intptr_t>(tex);
-        ImGui::Image(reinterpret_cast<void*>(texture), ImVec2(size, size), ImVec2(0, 1), ImVec2(1, 0));
+        constexpr const char* content
+            = "Camera Control\nMouse Right: rotate\n\t+[Shift]: move\n\t+[Ctrl]: forward/backward by y\nR Key: Reset";
+        ImGui::TextUnformatted(content);
     }
 
     /* Test Window - end ----------------------------------------------------------------------------*/

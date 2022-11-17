@@ -171,19 +171,11 @@ ResourceManager::ResourceManager() :
     m_cube = new Object();
     m_cube->m_p_model = m_models[LoadFbx("model/skycube.fbx")];
 
-
-
-
-
-
     const std::vector<std::pair<ShaderType, std::filesystem::path>> shader_files = {
         std::make_pair(ShaderType::Vertex, "shader/prefilter.vert"),
         std::make_pair(ShaderType::Fragment, "shader/prefilter.frag")
     };
     m_cube->m_p_shader = m_shaders[LoadShaders(shader_files)];
-
-   
-
 
     m_cube->m_p_shader->Use();
     m_fbo_prefiltermap->Bind();
@@ -197,7 +189,7 @@ ResourceManager::ResourceManager() :
         glm::vec3(0,0,-1),
         glm::vec3(0,0,1),
     };
-    int maxMipLevels = 7;
+    constexpr int maxMipLevels = 7;
 
     m_cube->m_p_shader->SendUniform("t_ibl", m_texUnit.find(TextureType::IBL)->second);
     m_cube->m_p_shader->SendUniform("t_irradiance", m_texUnit.find(TextureType::Irradiance)->second);
@@ -208,8 +200,8 @@ ResourceManager::ResourceManager() :
     for (int mip = 0; mip < maxMipLevels; mip++)
     {
 
-        unsigned int mipWidth = static_cast<unsigned int>(512 * std::pow(0.5, mip));
-        unsigned int mipHeight = static_cast<unsigned int>(512 * std::pow(0.5, mip));
+        const unsigned int mipWidth = static_cast<unsigned int>(512 * std::pow(0.5, mip));
+        const unsigned int mipHeight = static_cast<unsigned int>(512 * std::pow(0.5, mip));
         m_fbo_prefiltermap->BindRBO_PrefilterMap(mipWidth, mipHeight);
 
 
@@ -231,12 +223,10 @@ ResourceManager::ResourceManager() :
 
     m_fbo_prefiltermap->UnBind();
     m_cube->m_p_shader->UnUse();
-    CameraBuffer::s_m_aspectRatio = (float)size.x / size.y;
-    CameraBuffer::s_m_camera->Set(views[0]);
+    CameraBuffer::s_m_aspectRatio = static_cast<float>(size.x) / static_cast<float>(size.y);
+    CameraBuffer::s_m_camera->Reset();
     CameraBuffer::Bind();
     glViewport(0,0,size.x, size.y);
-
-
 }
 
 ResourceManager::~ResourceManager()

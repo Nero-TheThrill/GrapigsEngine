@@ -49,7 +49,7 @@ public:
     Grid(float size, std::size_t divide = 10) noexcept;
     ~Grid() noexcept;
     void Draw() const noexcept;
-    glm::vec4 m_color{ 0, 0, 0, 0.5f };
+    glm::vec4 m_color{ 0, 0, 0, 1 };
 private:
     const float m_height = 0.f;
     unsigned m_vao, m_vbo;
