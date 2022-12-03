@@ -361,6 +361,7 @@ Texture::Texture(const char* file_path, bool is_2d_texture, bool is_hdr) noexcep
 
 		glGenTextures(1, &m_handle);
 		glBindTexture(GL_TEXTURE_2D, m_handle);
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, data);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
