@@ -247,7 +247,7 @@ void CameraBuffer::UpdateMainCamera() noexcept
 		switch (Input::GetModifier())
 		{
 		case Modifier::None:
-			s_m_camera->OrbitMouse(-mouse.x, -mouse.y, 0.02f);
+			s_m_camera->OrbitMouse(-mouse.x, -mouse.y, 0.005f);
 		break;
 		case Modifier::Control:
 			{
