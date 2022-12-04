@@ -324,6 +324,7 @@ Texture::Texture(const char* file_path, bool is_2d_texture, bool is_hdr) noexcep
 		stbi_set_flip_vertically_on_load(true);
 		int width, height, channels;
 		unsigned char* data = stbi_load(m_path.string().c_str(), &width, &height, &channels, STBI_rgb);
+
 		if (data == nullptr)
 		{
 			std::cout << "[Texture] Error: Unable to load " << m_path << std::endl;
