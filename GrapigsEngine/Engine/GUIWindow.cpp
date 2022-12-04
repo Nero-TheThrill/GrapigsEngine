@@ -839,7 +839,7 @@ namespace GUIWindow
     void TestWindow::Content() noexcept
     {
         constexpr const char* content
-            = "Camera Control\nMouse Right: rotate\n\t+[Shift]: move\n\t+[Ctrl]: forward/backward by y\nR Key: Reset";
+            = "Camera Control\n Mouse Button :\n\t [RMB]: Rotate around Origin\n\t [RMB]+[Ctrl]: Forward/Backward by Y-axis\n\t [MMB]: Rotate around Camera\n\t [MMB]+[Ctrl]: Move \n\n [R] Key: Reset Camera \n\n Drag and Drop Model and Textures to load";
         ImGui::TextUnformatted(content);
     }
 

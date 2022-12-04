@@ -88,7 +88,7 @@ public:
     Texture* GetTexture(const std::filesystem::path& path) const noexcept;
     Texture* GetTexture(const unsigned tag) noexcept;
 
-    Object* CreateObject(unsigned mesh, unsigned shader, unsigned texture = ERROR_INDEX) noexcept;
+    Object* CreateObject(unsigned mesh, unsigned shader, unsigned t_albedo = ERROR_INDEX, unsigned t_metallic = ERROR_INDEX, unsigned t_roughness = ERROR_INDEX) noexcept;
     Object* CreateObject(const char* path) noexcept;
     
     void CreateSkyBox() noexcept;

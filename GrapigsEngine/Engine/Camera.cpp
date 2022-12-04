@@ -74,7 +74,7 @@ void Camera::Set(const glm::mat4& view) noexcept
 
 void Camera::Reset() noexcept
 {
-	Set(glm::vec3{ 0, 1, 3 });
+	Set(glm::vec3{ 0, 0, 1.3 });
 	UpdateMatrix();
 }
 
@@ -247,10 +247,7 @@ void CameraBuffer::UpdateMainCamera() noexcept
 		switch (Input::GetModifier())
 		{
 		case Modifier::None:
-			s_m_camera->RotateMouse(-mouse.x, mouse.y, 0.05f);
-		break;
-		case Modifier::Shift:
-			s_m_camera->TranslateMouse(-mouse.x, -mouse.y, 0.002f);
+			s_m_camera->OrbitMouse(-mouse.x, -mouse.y, 0.02f);
 		break;
 		case Modifier::Control:
 			{
@@ -262,17 +259,29 @@ void CameraBuffer::UpdateMainCamera() noexcept
 		}
 	}
 
-	cursor_dir = Input::GetMouseMovingDirection(MouseButton::Middle);
-	if (cursor_dir.x != 0 || cursor_dir.y != 0)
-	{
-		const glm::vec2 mouse = glm::vec2{ cursor_dir.x, cursor_dir.y };
-		s_m_camera->OrbitMouse(-mouse.x, -mouse.y, 0.05f);
-	}
+
 
 	if(const int scroll = Input::GetMouseScroll(); scroll)
 	{
 		s_m_camera->Forward(static_cast<float>(scroll) * 0.1f);
 	}
+
+	cursor_dir = Input::GetMouseMovingDirection(MouseButton::Middle);
+	if (cursor_dir.x != 0 || cursor_dir.y != 0)
+	{
+		const glm::vec2 mouse = glm::vec2{ cursor_dir.x, cursor_dir.y };
+		switch (Input::GetModifier())
+		{
+		case Modifier::None:
+			s_m_camera->RotateMouse(-mouse.x, mouse.y, 0.05f);
+			break;
+		case Modifier::Control:
+			s_m_camera->TranslateMouse(-mouse.x, -mouse.y, 0.002f);
+			break;
+		default: break;
+		}
+	}
+
 
 	if (Input::IsKeyReleased(Keyboard::R))
 		s_m_camera->Reset();

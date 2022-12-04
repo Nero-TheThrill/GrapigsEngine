@@ -333,7 +333,7 @@ Texture* ResourceManager::GetTexture(const unsigned tag) noexcept
     return nullptr;
 }
 
-Object* ResourceManager::CreateObject(unsigned mesh, unsigned shader, unsigned texture) noexcept
+Object* ResourceManager::CreateObject(unsigned mesh, unsigned shader, unsigned t_albedo, unsigned t_metallic, unsigned t_roughness) noexcept
 {
     delete m_object;
     m_object = new Object();
@@ -341,12 +341,25 @@ Object* ResourceManager::CreateObject(unsigned mesh, unsigned shader, unsigned t
 	    m_object->m_p_model = m_models[mesh];
     if(m_shaders.contains(shader))
 	    m_object->m_p_shader = m_shaders[shader];
-    if (m_textures.contains(texture))
+    if (m_textures.contains(t_albedo))
     {
         auto& meshes = m_object->m_p_model->m_meshes;
-        for(std::size_t i = 1; i < meshes.size(); ++i)
-            meshes[i].material.t_albedo = m_textures[texture];
+        for (std::size_t i = 1; i < meshes.size(); ++i)
+            meshes[i].material.t_albedo = m_textures[t_albedo];
     }
+    if (m_textures.contains(t_metallic))
+    {
+        auto& meshes = m_object->m_p_model->m_meshes;
+        for (std::size_t i = 1; i < meshes.size(); ++i)
+            meshes[i].material.t_metallic = m_textures[t_metallic];
+    }
+    if (m_textures.contains(t_roughness))
+    {
+        auto& meshes = m_object->m_p_model->m_meshes;
+        for (std::size_t i = 1; i < meshes.size(); ++i)
+            meshes[i].material.t_roughness = m_textures[t_roughness];
+    }
+
     return  m_object;
 }
 

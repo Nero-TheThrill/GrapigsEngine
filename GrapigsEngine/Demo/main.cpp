@@ -42,7 +42,7 @@ void DragAndDrop(ResourceManager* r, GUI* g, Object* o)
 	}
 }
 
-Object* CreateObject(ResourceManager* r, const std::string& vertex_shader, const std::string& fragment_shader, const std::string& model_path, const std::string& texture_path )
+Object* CreateObject(ResourceManager* r, const std::string& vertex_shader, const std::string& fragment_shader, const std::string& model_path, const std::string& albedo_path, const std::string& metallic_path, const std::string& roughness_path)
 {
 	const std::vector<std::pair<ShaderType, std::filesystem::path>> shader_files = {
 			std::make_pair(ShaderType::Vertex, vertex_shader),
@@ -51,8 +51,10 @@ Object* CreateObject(ResourceManager* r, const std::string& vertex_shader, const
 
 	unsigned shaderTag = r->LoadShaders(shader_files);
 	unsigned modelTag = r->LoadFbx(model_path.c_str());
-	unsigned textureTag = r->LoadTexture(texture_path.c_str());
-	return r->CreateObject(modelTag, shaderTag, textureTag);
+	unsigned albedoTag = r->LoadTexture(albedo_path.c_str());
+	unsigned metallicTag = r->LoadTexture(metallic_path.c_str());
+	unsigned roughnessTag = r->LoadTexture(roughness_path.c_str());
+	return r->CreateObject(modelTag, shaderTag, albedoTag,metallicTag,roughnessTag);
 }
 
 int main(void)
@@ -63,7 +65,7 @@ int main(void)
 	GUI gui(resource);
 	Lights* lights = CreateLights();
 
-	Object* obj = CreateObject(resource, "shader/test.vert", "shader/test.frag", "model/sphere.fbx", "texture/sphere.jpg");
+	Object* obj = CreateObject(resource, "shader/test.vert", "shader/test.frag", "model/headphone.fbx", "texture/headphone/GREEN/HEADPHONES_V2_DefaultMaterial_BaseColor.png", "texture/headphone/GREEN/HEADPHONES_V2_DefaultMaterial_Metallic.png", "texture/headphone/GREEN/HEADPHONES_V2_DefaultMaterial_Roughness.png");
 
 	gui.SetObject(obj);
 	
