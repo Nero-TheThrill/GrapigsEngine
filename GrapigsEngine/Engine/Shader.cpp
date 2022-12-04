@@ -323,7 +323,7 @@ Texture::Texture(const char* file_path, bool is_2d_texture, bool is_hdr) noexcep
 	{
 		stbi_set_flip_vertically_on_load(true);
 		int width, height, channels;
-		unsigned char* data = stbi_load(m_path.string().c_str(), &width, &height, &channels, STBI_rgb);
+		unsigned char* data = stbi_load(m_path.string().c_str(), &width, &height, &channels, 0);
 
 		if (data == nullptr)
 		{
@@ -333,6 +333,11 @@ Texture::Texture(const char* file_path, bool is_2d_texture, bool is_hdr) noexcep
 
 		const GLenum sized_internal_format = (channels == 4) ? GL_RGBA8 : GL_RGB8;
 		const GLenum base_internal_format = (channels == 4) ? GL_RGBA : GL_RGB;
+		if(channels == 1)
+		{
+			stbi_image_free(data);
+			data = stbi_load(m_path.string().c_str(), &width, &height, &channels, STBI_rgb);
+		}
 
 		if (!m_handle)
 			glCreateTextures(GL_TEXTURE_2D, 1, &m_handle);
