@@ -1,3 +1,10 @@
+/*
+ *	Author		: Jina Hyun
+ *	Date		: 10/18/22
+ *	File Name	: GUIWindow.h
+ *	Desc		: ImGui Windows
+ */
+
 #pragma once
 #include <functional>			// std::function
 #include <string>				// std::string

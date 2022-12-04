@@ -1,3 +1,10 @@
+/*
+ *	Author		: Jina Hyun
+ *	Date		: 10/18/22
+ *	File Name	: GUIWindow.cpp
+ *	Desc		: ImGui Windows
+ */
+
 #include "GUIWindow.h"
 
 #pragma warning (disable : 4201)
