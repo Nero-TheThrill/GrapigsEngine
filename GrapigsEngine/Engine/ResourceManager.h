@@ -51,7 +51,7 @@ public:
     void Draw() const noexcept;
     glm::vec4 m_color{ 0, 0, 0, 1 };
 private:
-    const float m_height = 0.f;
+    const float m_height = -1.f;
     unsigned m_vao, m_vbo;
     ShaderProgram* m_program;
     std::vector<glm::vec3> m_position;
