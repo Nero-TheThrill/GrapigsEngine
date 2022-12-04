@@ -81,7 +81,7 @@ namespace GUIWindow
 	private:
 		void UpdateGizmo() noexcept;
 		glm::mat4 m_model{ 1.f }, m_view{ 1.f }, m_proj{ 1.f };
-		glm::mat4 m_delta{ 1.f };
+		float m_aspect = 1;
 	};
 
 	class Mesh final : public Window

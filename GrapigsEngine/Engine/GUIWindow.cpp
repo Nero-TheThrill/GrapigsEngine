@@ -296,17 +296,15 @@ namespace GUIWindow
 
     Scene::Scene(const char* name, WindowInst* p_inst) noexcept : Window(name, p_inst)
     {
-        auto* p_cam = CameraBuffer::GetMainCamera();
+        const auto* p_cam = CameraBuffer::GetMainCamera();
         m_view = p_cam->GetWorldToCameraMatrix();
-        auto [near, far] = p_cam->Plane();
-        m_proj = glm::perspective(glm::radians(p_cam->FOV()), CameraBuffer::s_m_aspectRatio, near, far);
+        m_proj = p_cam->GetCameraToNDCMatrix();
     }
 
     void Scene::SetObject(Object* p_object) noexcept
     {
         Window::SetObject(p_object);
         m_model = m_p_object->m_transform.GetTransformMatrix();
-        m_delta = glm::mat4{ 1 };
     }
 
     void Scene::Update() noexcept
@@ -345,24 +343,15 @@ namespace GUIWindow
 
         // Camera
         Camera* p_cam = CameraBuffer::GetMainCamera();
-        if (p_cam->IsUpdated())
-        {
-	        m_view = CameraBuffer::GetMainCamera()->GetWorldToCameraMatrix();
-            const auto [near, far] = p_cam->Plane();
-            const auto size = ImGui::GetContentRegionAvail();
-            m_proj = glm::perspective(glm::radians(p_cam->FOV()), size.x / size.y, near, far);
-        }
+        m_view = p_cam->GetWorldToCameraMatrix();
+        m_proj = p_cam->GetCameraToNDCMatrix();
 
         GUIWindow::GizmoTool* p_gizmotool = &m_p_windows->m_gizmoToolWin;
         GUIWindow::Transform* p_transformWin = &m_p_windows->m_transformWin;
 
         if(p_gizmotool->m_operation != GizmoTool::Operation::None)
         {
-        	if(p_transformWin->DoesReset())
-        	{
-        		m_model = m_p_object->m_transform.GetTransformMatrix();
-                m_delta = glm::mat4{ 1 };
-        	}
+            m_model = m_p_object->m_transform.GetTransformMatrix();
 
         	// Set operation
         	auto operation = ImGuizmo::OPERATION::TRANSLATE;
@@ -371,13 +360,13 @@ namespace GUIWindow
         	else if (p_gizmotool->m_operation == GizmoTool::Operation::Scaling)
         		operation = ImGuizmo::OPERATION::SCALE;
 
-        	ImGuizmo::Manipulate(glm::value_ptr(m_view), glm::value_ptr(m_proj), operation, ImGuizmo::MODE::WORLD, glm::value_ptr(m_model), glm::value_ptr(m_delta));
+            ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, ImGui::GetWindowWidth(), ImGui::GetWindowHeight());
+            ImGuizmo::Manipulate(&m_view[0][0], &m_proj[0][0], operation, ImGuizmo::MODE::WORLD, &m_model[0][0]);
         	if(ImGuizmo::IsUsing())
         	{
         		glm::vec3 translation, rotation, scaling;
            
-        		ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(m_model), &translation[0], &rotation[0], &scaling[0]);
-        		ImGuizmo::RecomposeMatrixFromComponents(&translation[0], &rotation[0], &scaling[0], glm::value_ptr(m_model));
+        		ImGuizmo::DecomposeMatrixToComponents(&m_model[0][0], &translation[0], &rotation[0], &scaling[0]);
 
         		::Transform& t = m_p_object->m_transform;
         		const glm::vec3 deltaRot = rotation - t.GetRotation();
@@ -393,7 +382,8 @@ namespace GUIWindow
         const auto& size = ImGui::GetWindowSize();
         const auto& pos = ImGui::GetWindowPos();
         ImGuizmo::SetRect(pos.x, pos.y, size.x, size.y);
-        ImGuizmo::ViewManipulate(glm::value_ptr(m_view), glm::length(p_cam->Eye()), ImVec2(pos.x + size.x - 128, pos.y + 20), ImVec2(128, 128), 0x10101010);
+        ImGuizmo::ViewManipulate(&m_view[0][0], glm::length(p_cam->Eye()), ImVec2(pos.x + size.x - 128, pos.y + 20), ImVec2(128, 128), 0x10101010);
+        m_view = p_cam->GetWorldToCameraMatrix();
     }
 
     /* Scene Window - end ---------------------------------------------------------------------------*/
@@ -563,8 +553,8 @@ namespace GUIWindow
 
     void Asset::Content() noexcept
     {
-        m_modelDD.Combo();
-        ImGui::TextUnformatted("[THIS DROP DOWN DOES NOT WORK FOR NOW]");
+       // m_modelDD.Combo();
+       // ImGui::TextUnformatted("[THIS DROP DOWN DOES NOT WORK FOR NOW]");
 
         ImGui::Separator();
     	ImGui::Separator();
