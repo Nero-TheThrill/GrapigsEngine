@@ -1,0 +1,7 @@
+Jinwoo Choi: PBR, IBL, Skybox, Engine Structure, Transform, FBX UV load, Shader
+
+Jina Hyun: Engine Structure, Tools(IMGUI, Gizmo), Camera, FBX file load, UI, Input, Shader Compile & Load, Texture
+
+
+
+© 2022 DigiPen (USA) Corporation
