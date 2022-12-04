@@ -65,7 +65,7 @@ int main(void)
 	GUI gui(resource);
 	Lights* lights = CreateLights();
 
-	Object* obj = CreateObject(resource, "shader/test.vert", "shader/test.frag", "model/headphone.fbx", "texture/headphone/GREEN/HEADPHONES_V2_DefaultMaterial_BaseColor.png", "texture/headphone/GREEN/HEADPHONES_V2_DefaultMaterial_Metallic.png", "texture/headphone/GREEN/HEADPHONES_V2_DefaultMaterial_Roughness.png");
+	Object* obj = CreateObject(resource, "shader/test.vert", "shader/test.frag", "model/headphone.fbx", "texture/headphone/GREEN/HEADPHONES_GREEN_DefaultMaterial_BaseColor.png", "texture/headphone/GREEN/HEADPHONES_GREEN_DefaultMaterial_Metallic.png", "texture/headphone/GREEN/HEADPHONES_GREEN_DefaultMaterial_Roughness.png");
 
 	gui.SetObject(obj);
 	

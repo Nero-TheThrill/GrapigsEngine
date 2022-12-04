@@ -149,7 +149,7 @@ namespace GUIWindow
 		m_textureModal("Import Texture Modal", this),
         m_assetWin("Imported Asset", this),
         m_gizmoToolWin("Tool", this),
-		m_testWin("TEST", this),
+		m_testWin("Instruction", this),
 		m_p_resource(p_resource)
     {
     }
