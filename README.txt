@@ -12,6 +12,7 @@ Key Control:
 	- Drag [Middle Mouse Button]: Rotate around Camera
 	- [Ctrl] + Drag [Middle Mouse Button]: Move Camera
 	- [R]: Reset Camera
+	- [Mouse Wheel Down/Up]: Zoom In/Out
 
 
 Drag and Drop Model(.fbx) and Textures(.png, .jpg) to load.
