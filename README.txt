@@ -10,7 +10,7 @@ Graphics engine simulates object using PBR and IBL technique.
 Library	: GLEW(3.3.8), GLEW(2.2.0), ImGui(1.88), FBXSDK 2020.0, ImGuizmo(1.83)
 
 2. How to launch
-	- Open 'GrapigsEngine.exe' in GrapigsEngine folder.
+	- Open 'GrapigsEngine.exe' in 400-GrapigsEngine folder.
 	- There must be three directories in the folder: model, shader, and texture
 
 
