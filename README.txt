@@ -5,12 +5,16 @@
  	  Jinwoo Choi (jinwoo.choi@digipen.edu)
 =================================================
 
-1. How to launch
+1. Introduction
+Graphics engine simulates object using PBR and IBL technique.
+Library	: GLEW(3.3.8), GLEW(2.2.0), ImGui(1.88), FBXSDK 2020.0, ImGuizmo(1.83)
+
+2. How to launch
 	- Open 'GrapigsEngine.exe' in GrapigsEngine folder.
 	- There must be three directories in the folder: model, shader, and texture
 
 
-2. How to control
+3. How to control
     - Drag [Right Mouse Button]: Rotate around the origin
     - [Ctrl] + Drag [Right Mouse Button]: Move Forward/Backward along Y-axis
     - Drag [Middle Mouse Button]: Rotate around Camera
@@ -20,7 +24,7 @@
 
 Drag and Drop '*.fbx' for model and '*.png, *.jpg' for texture to import assets. The program support loading multiple files at once.
 
-3. Windows
+4. Windows
 [Mesh] Window
 	- It shows the hierarchy of the mesh.
 
