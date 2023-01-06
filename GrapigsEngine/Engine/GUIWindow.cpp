@@ -1,3 +1,10 @@
+/*
+ *	Author		: Jina Hyun
+ *	Date		: 10/18/22
+ *	File Name	: GUIWindow.cpp
+ *	Desc		: ImGui Windows
+ */
+
 #include "GUIWindow.h"
 
 #pragma warning (disable : 4201)
@@ -351,7 +358,8 @@ namespace GUIWindow
 
         if(p_gizmotool->m_operation != GizmoTool::Operation::None)
         {
-            m_model = m_p_object->m_transform.GetTransformMatrix();
+            if(m_p_windows->m_transformWin.DoesReset())
+				m_model = m_p_object->m_transform.GetTransformMatrix();
 
         	// Set operation
         	auto operation = ImGuizmo::OPERATION::TRANSLATE;
@@ -836,6 +844,17 @@ namespace GUIWindow
     {
     }
 
+    void TestWindow::Update() noexcept
+    {
+        if(m_open)
+    	if(ImGui::Begin(m_name.c_str(), &m_open, ImGuiWindowFlags_AlwaysAutoResize))
+        {
+            Content();
+			ImGui::End();
+        }
+
+    }
+
     void TestWindow::Content() noexcept
     {
         constexpr const char* content
@@ -844,5 +863,61 @@ namespace GUIWindow
     }
 
     /* Test Window - end ----------------------------------------------------------------------------*/
+    /*-----------------------------------------------------------------------------------------------*/
+    /* Splash - start -------------------------------------------------------------------------------*/
 
+    Splash::Splash(const char* name, WindowInst* p_inst) noexcept
+        : Window(name, p_inst)
+    {
+        m_open = true;
+    }
+
+    void Splash::Update() noexcept
+    {
+        if(m_open)
+        {
+            ImGui::OpenPopup("Splash");
+            if(m_initial)
+            {
+	            auto tag = m_p_windows->m_p_resource->LoadTexture("texture/DigiPen.png");
+            	m_logo = m_p_windows->m_p_resource->GetTexture(tag)->Handle();
+            	tag = m_p_windows->m_p_resource->LoadTexture("texture/Credits.png");
+            	m_credits = m_p_windows->m_p_resource->GetTexture(tag)->Handle();
+                m_initial = false;
+            }
+            m_open = false;
+        }
+        else
+    	{
+		    const ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+        	ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+        	if (ImGui::BeginPopupModal("Splash", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove))
+        	{
+        		Content();
+        		ImGui::EndPopup();
+        	}
+	    }
+    }
+
+    void Splash::Content() noexcept
+    {
+        if (m_first == true)
+        {
+            if (ImGui::ImageButton(reinterpret_cast<void*>(static_cast<intptr_t>(m_logo)), { 800, 800 }, { 0, 1 }, { 1, 0 }))
+                m_first = false;
+            if (ImGui::Button("Next : Credits", ImVec2(120, 0)))
+                m_first = false;
+        }
+        else
+        {
+            if(ImGui::ImageButton(reinterpret_cast<void*>(static_cast<intptr_t>(m_credits)), { 800, 800 }, { 0, 1 }, { 1, 0 }))
+                ImGui::CloseCurrentPopup();
+                
+            if (ImGui::Button("Prev : Logo", ImVec2(120, 0)))
+                m_first = true;
+            ImGui::SameLine();
+            if (ImGui::Button("Exit", ImVec2(120, 0)))
+                ImGui::CloseCurrentPopup();
+        }
+    }
 }

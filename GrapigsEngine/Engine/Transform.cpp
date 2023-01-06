@@ -1,5 +1,5 @@
 /*
- *	Author		: Jinwoo Choi
+ *	Author		: Jinwoo Choi, Jina Hyun
  *	Date		: 09/26/22
  *	File Name	: Transform.cpp
  *	Desc		: transform

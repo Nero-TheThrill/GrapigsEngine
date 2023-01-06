@@ -72,6 +72,7 @@ void GUI::MainMenuBar() noexcept
             ImGui::MenuItem("Scene Window", "", &m_windows.m_sceneWin.m_open);
             ImGui::MenuItem("Mesh Window", "", &m_windows.m_meshWin.m_open);
             ImGui::MenuItem("Asset Window", "", &m_windows.m_assetWin.m_open);
+            ImGui::MenuItem("Instruction", "", &m_windows.m_testWin.m_open);
             ImGui::EndMenu();
         }
 

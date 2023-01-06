@@ -1,3 +1,10 @@
+/*
+ *	Author		: Jina Hyun
+ *	Date		: 10/18/22
+ *	File Name	: GUIWindow.h
+ *	Desc		: ImGui Windows
+ */
+
 #pragma once
 #include <functional>			// std::function
 #include <string>				// std::string
@@ -81,7 +88,6 @@ namespace GUIWindow
 	private:
 		void UpdateGizmo() noexcept;
 		glm::mat4 m_model{ 1.f }, m_view{ 1.f }, m_proj{ 1.f };
-		float m_aspect = 1;
 	};
 
 	class Mesh final : public Window
@@ -153,7 +159,20 @@ namespace GUIWindow
 	{
 	public:
 		TestWindow(const char* name, WindowInst* p_inst) noexcept;
+		void Update() noexcept override;
 		void Content() noexcept override;
+	};
+
+	class Splash : public Window
+	{
+	public:
+		Splash(const char* name, WindowInst* p_inst) noexcept;
+		void Update() noexcept override;
+		void Content() noexcept override;
+	private:
+		bool m_initial = true;
+		unsigned m_logo = 0, m_credits = 0;
+		bool m_first = true;
 	};
 
 	struct WindowInst
