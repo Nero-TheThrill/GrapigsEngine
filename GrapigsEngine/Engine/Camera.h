@@ -5,6 +5,7 @@
  *	Desc		: Camera functions
  */
 #pragma once
+#include <utility>
 #include <glm/glm.hpp>	// glm
 
 class Camera
