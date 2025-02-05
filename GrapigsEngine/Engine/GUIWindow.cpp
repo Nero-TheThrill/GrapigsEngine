@@ -879,7 +879,7 @@ namespace GUIWindow
     {
         if(m_open)
         {
-            ImGui::OpenPopup("Splash");
+            //ImGui::OpenPopup("Splash");
             if(m_initial)
             {
 	            auto tag = m_p_windows->m_p_resource->LoadTexture("texture/DigiPen.png");
